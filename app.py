@@ -89,6 +89,40 @@ Commands:
     except Exception as e:
         print(f"START ERROR: {e}")
 
+@bot.on_message(filters.group & ~filters.service)
+async def count_messages(_, message):
+    try:
+        if not message.from_user:
+            return
+
+        if message.text:
+            cmd = message.text.split()[0].lower()
+            if cmd.startswith("/ranking"):
+                print("Skipping ranking command count")
+                return
+
+        await users.update_one(
+            {
+                "chat_id": message.chat.id,
+                "user_id": message.from_user.id
+            },
+            {
+                "$inc": {
+                    "overall": 1,
+                    f"daily.{today()}": 1,
+                    f"weekly.{week()}": 1
+                },
+                "$set": {
+                    "name": message.from_user.first_name
+                }
+            },
+            upsert=True
+        )
+
+        print(f"Updated count for {message.from_user.first_name}")
+
+    except Exception as e:
+        print(f"COUNT ERROR: {e}")
 
 @bot.on_message(filters.group & filters.text)
 async def ranking(_, message):
@@ -132,8 +166,8 @@ async def ranking(_, message):
 
 
 async def build_board(chat_id, mode):
-    try:
-        ranking = []
+    await users.database.client.admin.command("ping")
+    ranking = []
 
         async for user in users.find({"chat_id": chat_id}):
             if mode == "overall":
