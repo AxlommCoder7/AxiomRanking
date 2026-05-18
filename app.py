@@ -1,14 +1,18 @@
+import os
+import asyncio
+from datetime import datetime
 from pyrogram import Client, filters, idle
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from motor.motor_asyncio import AsyncIOMotorClient
-from datetime import datetime
-import os
-import asyncio
+
+print("Starting bot file...")
 
 API_ID = int(os.getenv("API_ID"))
 API_HASH = os.getenv("API_HASH")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 MONGO_URL = os.getenv("MONGO_URL")
+
+print("Environment variables loaded successfully")
 
 bot = Client(
     "ranking_bot",
@@ -22,6 +26,8 @@ mongo = AsyncIOMotorClient(MONGO_URL)
 db = mongo["ranking_bot"]
 users = db["users"]
 
+print("MongoDB connected")
+
 
 def today():
     return datetime.utcnow().strftime("%Y-%m-%d")
@@ -33,94 +39,138 @@ def week():
 
 @bot.on_message(filters.command("start"))
 async def start_cmd(_, message):
-    text = """
-✨ **Welcome to Axiom Ranking Bot**
+    try:
+        print("/start command received")
 
-Track your group activity with ease 📊
+        text = """
+✨ **Welcome To Axiom Ranking Bot**
 
-**Available Commands:**
-• /ranking - Show group leaderboard
+Track group chats easily 📊
 
-Bot tracks:
-• Overall messages
-• Daily messages
-• Weekly messages
+Commands:
+• /ranking - show leaderboard
 """
 
-    buttons = InlineKeyboardMarkup(
-        [
+        buttons = InlineKeyboardMarkup(
             [
-                InlineKeyboardButton("Channel", url="https://t.me/axiombots"),
-                InlineKeyboardButton("Group", url="https://t.me/axlomm")
-            ],
-            [
-                InlineKeyboardButton("Owner", url="https://t.me/xomnv")
-            ],
-            [
-                InlineKeyboardButton("Add To Group", url=f"https://t.me/{(await bot.get_me()).username}?startgroup=true")
+                [
+                    InlineKeyboardButton(
+                        "Channel",
+                        url="https://t.me/axiombots"
+                    ),
+                    InlineKeyboardButton(
+                        "Group",
+                        url="https://t.me/axlomm"
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        "Owner",
+                        url="https://t.me/xomnv"
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        "Add To Group",
+                        url=f"https://t.me/{(await bot.get_me()).username}?startgroup=true"
+                    )
+                ]
             ]
-        ]
-    )
+        )
 
-    await message.reply_text(
-        text,
-        reply_markup=buttons,
-        disable_web_page_preview=True
-    )
-    
+        await message.reply_text(
+            text,
+            reply_markup=buttons,
+            disable_web_page_preview=True
+        )
+
+        print("/start success")
+
+    except Exception as e:
+        print(f"START ERROR: {e}")
+
+
 @bot.on_message(filters.group & ~filters.service)
-async def count_msg(_, message):
-    if not message.from_user:
-        return
+async def count_messages(_, message):
+    try:
+        print(
+            f"Message detected | "
+            f"chat={message.chat.id}"
+        )
 
-    await users.update_one(
-        {
-            "chat_id": message.chat.id,
-            "user_id": message.from_user.id
-        },
-        {
-            "$inc": {
-                "overall": 1,
-                f"daily.{today()}": 1,
-                f"weekly.{week()}": 1
+        if not message.from_user:
+            return
+
+        await users.update_one(
+            {
+                "chat_id": message.chat.id,
+                "user_id": message.from_user.id
             },
-            "$set": {
-                "name": message.from_user.first_name
-            }
-        },
-        upsert=True
-    )
+            {
+                "$inc": {
+                    "overall": 1,
+                    f"daily.{today()}": 1,
+                    f"weekly.{week()}": 1
+                },
+                "$set": {
+                    "name": message.from_user.first_name
+                }
+            },
+            upsert=True
+        )
+
+        print("Message count updated")
+
+    except Exception as e:
+        print(f"COUNT ERROR: {e}")
 
 
-async def make_board(chat_id, mode):
-    data = []
+async def build_board(chat_id, mode):
+    try:
+        ranking = []
 
-    async for user in users.find({"chat_id": chat_id}):
-        if mode == "overall":
-            count = user.get("overall", 0)
+        async for user in users.find({"chat_id": chat_id}):
+            if mode == "overall":
+                count = user.get("overall", 0)
 
-        elif mode == "today":
-            count = user.get("daily", {}).get(today(), 0)
+            elif mode == "today":
+                count = user.get("daily", {}).get(today(), 0)
 
-        else:
-            count = user.get("weekly", {}).get(week(), 0)
+            else:
+                count = user.get("weekly", {}).get(week(), 0)
 
-        data.append((user.get("name", "User"), count))
+            ranking.append(
+                (
+                    user.get("name", "User"),
+                    count
+                )
+            )
 
-    data.sort(key=lambda x: x[1], reverse=True)
+        ranking.sort(
+            key=lambda x: x[1],
+            reverse=True
+        )
 
-    msg = f"🏆 **Leaderboard • {mode.upper()}**\n\n"
+        text = f"🏆 **Leaderboard ({mode.upper()})**\n\n"
 
-    total = 0
-    for i, (name, count) in enumerate(data[:10], start=1):
-        msg += f"{i}. {name} ➜ {count}\n"
-        total += count
+        total = 0
+        for i, (name, count) in enumerate(
+            ranking[:10],
+            start=1
+        ):
+            text += f"{i}. {name} ➜ {count}\n"
+            total += count
 
-    msg += f"\n📩 Total messages: {total}"
-    return msg
+        text += f"\n📩 Total Messages: {total}"
+
+        return text
+
+    except Exception as e:
+        print(f"BUILD BOARD ERROR: {e}")
+        return "Error building ranking."
 
 
-def get_buttons(active):
+def buttons(active):
     return InlineKeyboardMarkup(
         [
             [
@@ -143,30 +193,48 @@ def get_buttons(active):
 
 @bot.on_message(filters.command("ranking"))
 async def ranking(_, message):
-    if message.chat.type not in ["group", "supergroup"]:
-        return await message.reply("Use this in groups only.")
+    try:
+        print("/ranking command triggered")
 
-    text = await make_board(message.chat.id, "overall")
-    await message.reply_text(
-        text,
-        reply_markup=get_buttons("overall")
-    )
+        text = await build_board(
+            message.chat.id,
+            "overall"
+        )
+
+        await message.reply_text(
+            text,
+            reply_markup=buttons("overall")
+        )
+
+        print("/ranking success")
+
+    except Exception as e:
+        print(f"RANKING ERROR: {e}")
 
 
 @bot.on_callback_query()
 async def callbacks(_, query):
-    mode = query.data
+    try:
+        print(f"Button clicked: {query.data}")
 
-    if mode not in ["today", "week", "overall"]:
-        return
+        mode = query.data
 
-    text = await make_board(query.message.chat.id, mode)
+        text = await build_board(
+            query.message.chat.id,
+            mode
+        )
 
-    await query.message.edit_text(
-        text,
-        reply_markup=get_buttons(mode)
-    )
-    await query.answer()
+        await query.message.edit_text(
+            text,
+            reply_markup=buttons(mode)
+        )
+
+        await query.answer()
+
+        print("Callback success")
+
+    except Exception as e:
+        print(f"CALLBACK ERROR: {e}")
 
 
 async def main():
