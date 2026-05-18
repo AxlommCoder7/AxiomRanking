@@ -1,8 +1,6 @@
 import os
-import time
-import asyncio
 from datetime import datetime
-from pyrogram import Client, filters, idle
+from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -280,10 +278,4 @@ async def callbacks(_, query):
 
 if __name__ == "__main__":
     print("Bot Started Successfully")
-
-    bot.start()
-    print("Bot is now running...")
-
-    import time
-    while True:
-        time.sleep(10)
+    bot.run()
