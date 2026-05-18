@@ -123,7 +123,7 @@ async def count_messages(_, message):
     except Exception as e:
         print(f"COUNT ERROR: {e}")
 
-@bot.on_message(filters.group & filters.text)
+@bot.on_message(filters.group)
 async def ranking(_, message):
     try:
         print(
