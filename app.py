@@ -229,28 +229,6 @@ def buttons(active):
         ]
     )
 
-
-@bot.on_message(filters.command("ranking"))
-async def ranking(_, message):
-    try:
-        print("/ranking command triggered")
-
-        text = await build_board(
-            message.chat.id,
-            "overall"
-        )
-
-        await message.reply_text(
-            text,
-            reply_markup=buttons("overall")
-        )
-
-        print("/ranking success")
-
-    except Exception as e:
-        print(f"RANKING ERROR: {e}")
-
-
 @bot.on_callback_query()
 async def callbacks(_, query):
     try:
