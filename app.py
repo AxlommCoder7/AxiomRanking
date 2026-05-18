@@ -31,6 +31,43 @@ def week():
     return datetime.utcnow().strftime("%Y-%W")
 
 
+@bot.on_message(filters.command("start"))
+async def start_cmd(_, message):
+    text = """
+✨ **Welcome to Axiom Ranking Bot**
+
+Track your group activity with ease 📊
+
+**Available Commands:**
+• /ranking - Show group leaderboard
+
+Bot tracks:
+• Overall messages
+• Daily messages
+• Weekly messages
+"""
+
+    buttons = InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton("Channel", url="https://t.me/axiombots"),
+                InlineKeyboardButton("Group", url="https://t.me/axlomm")
+            ],
+            [
+                InlineKeyboardButton("Owner", url="https://t.me/xomnv")
+            ],
+            [
+                InlineKeyboardButton("Add To Group", url=f"https://t.me/{(await bot.get_me()).username}?startgroup=true")
+            ]
+        ]
+    )
+
+    await message.reply_text(
+        text,
+        reply_markup=buttons,
+        disable_web_page_preview=True
+    )
+    
 @bot.on_message(filters.group & ~filters.service)
 async def count_msg(_, message):
     if not message.from_user:
