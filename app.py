@@ -9,10 +9,6 @@ API_HASH = os.environ["API_HASH"]
 BOT_TOKEN = os.environ["BOT_TOKEN"]
 MONGO_URL = os.environ["MONGO_URL"]
 
-mongo = AsyncIOMotorClient(MONGO_URL)
-db = mongo["ranking_bot"]
-users = db["users"]
-
 app = Client(
     "rankingbot",
     api_id=API_ID,
@@ -20,35 +16,34 @@ app = Client(
     bot_token=BOT_TOKEN
 )
 
+mongo = AsyncIOMotorClient(MONGO_URL)
+db = mongo.rankingbot
+users = db.users
 
-def get_today():
+
+def today_key():
     return datetime.utcnow().strftime("%Y-%m-%d")
 
 
-def get_week():
-    return datetime.utcnow().strftime("%Y-%U")
+def week_key():
+    return datetime.utcnow().strftime("%Y-%W")
 
 
 @app.on_message(filters.group & ~filters.service)
-async def count_messages(client, message):
+async def message_counter(_, message):
     if not message.from_user:
         return
 
     user = message.from_user
     chat_id = message.chat.id
-    today = get_today()
-    week = get_week()
 
     await users.update_one(
-        {
-            "chat_id": chat_id,
-            "user_id": user.id
-        },
+        {"chat_id": chat_id, "user_id": user.id},
         {
             "$inc": {
                 "overall": 1,
-                f"daily.{today}": 1,
-                f"weekly.{week}": 1
+                f"today.{today_key()}": 1,
+                f"week.{week_key()}": 1
             },
             "$set": {
                 "name": user.first_name
@@ -58,7 +53,7 @@ async def count_messages(client, message):
     )
 
 
-async def generate_ranking(chat_id, mode):
+async def build_ranking(chat_id, mode):
     ranking = []
 
     async for user in users.find({"chat_id": chat_id}):
@@ -68,71 +63,70 @@ async def generate_ranking(chat_id, mode):
             count = user.get("overall", 0)
 
         elif mode == "today":
-            count = user.get("daily", {}).get(get_today(), 0)
+            count = user.get("today", {}).get(today_key(), 0)
 
         elif mode == "week":
-            count = user.get("weekly", {}).get(get_week(), 0)
+            count = user.get("week", {}).get(week_key(), 0)
 
         ranking.append((user.get("name", "User"), count))
 
     ranking.sort(key=lambda x: x[1], reverse=True)
 
-    text = f"🏆 **TOP 10 - {mode.upper()}**\n\n"
+    text = f"🏆 **LEADERBOARD ({mode.upper()})**\n\n"
 
+    total = 0
     for i, (name, count) in enumerate(ranking[:10], start=1):
         text += f"{i}. {name} ➜ {count}\n"
+        total += count
 
+    text += f"\n📩 Total messages: {total}"
     return text
 
 
-@app.on_message(filters.command("ranking") & filters.group)
-async def ranking_command(client, message):
-    text = await generate_ranking(message.chat.id, "overall")
-
-    buttons = InlineKeyboardMarkup(
+def buttons(active="overall"):
+    return InlineKeyboardMarkup(
         [
             [
-                InlineKeyboardButton("Today", callback_data="rank_today"),
-                InlineKeyboardButton("Week", callback_data="rank_week"),
-                InlineKeyboardButton("Overall", callback_data="rank_overall")
+                InlineKeyboardButton(
+                    f"Today {'✅' if active == 'today' else ''}",
+                    callback_data="today"
+                ),
+                InlineKeyboardButton(
+                    f"Week {'✅' if active == 'week' else ''}",
+                    callback_data="week"
+                ),
+                InlineKeyboardButton(
+                    f"Overall {'✅' if active == 'overall' else ''}",
+                    callback_data="overall"
+                )
             ]
         ]
     )
 
-    await message.reply_text(text, reply_markup=buttons)
+
+@app.on_message(filters.command("ranking") & filters.group)
+async def ranking(_, message):
+    text = await build_ranking(message.chat.id, "overall")
+    await message.reply_text(
+        text,
+        reply_markup=buttons("overall")
+    )
 
 
 @app.on_callback_query()
-async def callbacks(client, callback_query):
-    data = callback_query.data
-    chat_id = callback_query.message.chat.id
-
-    if data == "rank_today":
-        text = await generate_ranking(chat_id, "today")
-
-    elif data == "rank_week":
-        text = await generate_ranking(chat_id, "week")
-
-    elif data == "rank_overall":
-        text = await generate_ranking(chat_id, "overall")
-
-    else:
+async def callback_handler(_, query):
+    mode = query.data
+    if mode not in ["today", "week", "overall"]:
         return
 
-    buttons = InlineKeyboardMarkup(
-        [
-            [
-                InlineKeyboardButton("Today", callback_data="rank_today"),
-                InlineKeyboardButton("Week", callback_data="rank_week"),
-                InlineKeyboardButton("Overall", callback_data="rank_overall")
-            ]
-        ]
+    text = await build_ranking(query.message.chat.id, mode)
+
+    await query.message.edit_text(
+        text,
+        reply_markup=buttons(mode)
     )
 
-    await callback_query.message.edit_text(
-        text,
-        reply_markup=buttons
-    )
+    await query.answer()
 
 
 print("Ranking Bot Started...")
