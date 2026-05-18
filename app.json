@@ -1,0 +1,32 @@
+{
+  "name": "Axiom Ranking Bot",
+  "description": "Telegram ranking bot with leaderboard system",
+  "keywords": ["telegram", "ranking", "leaderboard", "pyrogram"],
+  "repository": "https://github.com/maanavbaby/AxiomRanking",
+  "website": "https://github.com/maanavbaby/AxiomRanking",
+  "stack": "heroku-24",
+  "env": {
+    "API_ID": {
+      "description": "Telegram API ID",
+      "value": "39930006"
+    },
+    "API_HASH": {
+      "description": "Telegram API HASH",
+      "value": "0c1afd87f1a69d0e9a8b06b779480f51"
+    },
+    "BOT_TOKEN": {
+      "description": "Bot token from BotFather",
+      "value": "8549370008:AAE8711lV5BLWn0OxlSvdPACT9sSABIAzrA"
+    },
+    "MONGO_URL": {
+      "description": "MongoDB database URL",
+      "value": "mongodb+srv://saranjaat9694:saranjaat435@cluster0.ofptc9e.mongodb.net/?appName=Cluster0"
+    }
+  },
+  "formation": {
+    "worker": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  }
+}
