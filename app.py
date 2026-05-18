@@ -46,36 +46,22 @@ async def track_messages(_, message):
     )
 
 
-@app.on_message(filters.command("ranking"))
+@app.on_message(filters.command("ranking") & filters.group)
 async def ranking(_, message):
+    await message.reply_text("Ranking command received ✅")
+
     data = users.find(
         {"chat_id": message.chat.id}
     ).sort("overall", -1).limit(10)
 
-    text = "🏆 **LEADERBOARD**\n\n"
+    text = "🏆 LEADERBOARD\n\n"
 
     rank = 1
     async for user in data:
         text += f"{rank}. {user['name']} - {user.get('overall', 0)}\n"
         rank += 1
 
-    buttons = InlineKeyboardMarkup(
-        [
-            [
-                InlineKeyboardButton("Today", callback_data="today"),
-                InlineKeyboardButton("Week", callback_data="week"),
-                InlineKeyboardButton("Overall", callback_data="overall"),
-            ],
-            [
-                InlineKeyboardButton(
-                    "Profile",
-                    url=f"tg://user?id={message.from_user.id}"
-                )
-            ]
-        ]
-    )
-
-    await message.reply_text(text, reply_markup=buttons)
+    await message.reply_text(text)
 
 
 print("Ranking Bot Started...")
