@@ -166,8 +166,9 @@ async def ranking(_, message):
 
 
 async def build_board(chat_id, mode):
-    await users.database.client.admin.command("ping")
-    ranking = []
+    try:
+        await users.database.client.admin.command("ping")
+        ranking = []
 
         async for user in users.find({"chat_id": chat_id}):
             if mode == "overall":
@@ -202,7 +203,6 @@ async def build_board(chat_id, mode):
             total += count
 
         text += f"\n📩 Total Messages: {total}"
-
         return text
 
     except Exception as e:
