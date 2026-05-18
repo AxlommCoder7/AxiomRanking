@@ -237,12 +237,6 @@ async def callbacks(_, query):
         print(f"CALLBACK ERROR: {e}")
 
 
-async def main():
-    await bot.start()
-    print("Bot Started Successfully")
-    await idle()
-    await bot.stop()
-
-
 if __name__ == "__main__":
-    asyncio.run(main())
+    print("Bot Started Successfully")
+    bot.run()
