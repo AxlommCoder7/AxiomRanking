@@ -90,39 +90,45 @@ Commands:
         print(f"START ERROR: {e}")
 
 
-@bot.on_message(filters.group & ~filters.service)
-async def count_messages(_, message):
+@bot.on_message(filters.group & filters.text)
+async def ranking(_, message):
     try:
         print(
-            f"Message detected | "
+            f"GROUP MESSAGE: {message.text} "
             f"chat={message.chat.id}"
         )
 
-        if not message.from_user:
+        if not message.text:
             return
 
-        await users.update_one(
-            {
-                "chat_id": message.chat.id,
-                "user_id": message.from_user.id
-            },
-            {
-                "$inc": {
-                    "overall": 1,
-                    f"daily.{today()}": 1,
-                    f"weekly.{week()}": 1
-                },
-                "$set": {
-                    "name": message.from_user.first_name
-                }
-            },
-            upsert=True
+        cmd = message.text.split()[0].lower()
+
+        bot_username = (await bot.get_me()).username.lower()
+
+        valid_commands = [
+            "/ranking",
+            f"/ranking@{bot_username}"
+        ]
+
+        if cmd not in valid_commands:
+            return
+
+        print("/ranking detected in group")
+
+        text = await build_board(
+            message.chat.id,
+            "overall"
         )
 
-        print("Message count updated")
+        await message.reply_text(
+            text,
+            reply_markup=buttons("overall")
+        )
+
+        print("/ranking success in group")
 
     except Exception as e:
-        print(f"COUNT ERROR: {e}")
+        print(f"GROUP RANK ERROR: {e}")
 
 
 async def build_board(chat_id, mode):
