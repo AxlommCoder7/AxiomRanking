@@ -11,7 +11,7 @@ async def start_cmd(message: types.Message):
         parse_mode="HTML"
     )
 
-async def main():
-    await dp.start_polling()
-
-asyncio.run(main())
+if __name__ == "__main__":
+    print("Bot running...")
+    bot.run()
+    
