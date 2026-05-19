@@ -61,6 +61,18 @@ def generate_leaderboard_image(ranking, mode):
 
     # random premium palettes
     palettes = [
+        ((8, 12, 30), (18, 45, 80), (0, 240, 255)),      # cyan
+        ((20, 8, 30), (60, 20, 80), (255, 0, 180)),      # pink
+        ((8, 25, 18), (20, 80, 55), (0, 255, 170)),      # green
+        ((15, 10, 35), (40, 25, 90), (180, 100, 255)),   # purple
+        ((5, 18, 35), (10, 60, 120), (0, 170, 255)),     # blue
+        ((35, 10, 10), (90, 20, 20), (255, 70, 70)),     # red
+        ((35, 20, 5), (100, 50, 10), (255, 160, 0)),     # orange
+        ((30, 30, 5), (90, 90, 20), (255, 230, 0)),      # yellow
+        ((12, 30, 30), (20, 100, 100), (0, 255, 255)),   # aqua
+        ((25, 10, 35), (60, 20, 100), (220, 120, 255)),  # violet
+        ((30, 15, 25), (90, 30, 70), (255, 100, 200)),   # rose
+        ((10, 25, 35), (20, 70, 110), (100, 180, 255)),  # sky blue
         ((8, 12, 30), (18, 45, 80), (0, 240, 255)),
         ((20, 8, 30), (60, 20, 80), (255, 0, 180)),
         ((8, 25, 18), (20, 80, 55), (0, 255, 170)),
@@ -103,7 +115,7 @@ def generate_leaderboard_image(ranking, mode):
     # fonts
     try:
         title_font = ImageFont.truetype("cfont.ttf", 88)
-        name_font = ImageFont.truetype("f.ttf", 24)
+        name_font = ImageFont.truetype("f.ttf", 22)
         small_font = ImageFont.truetype("f.ttf", 26)
         count_font = ImageFont.truetype("cfont.ttf", 28)
     except:
@@ -165,13 +177,19 @@ def generate_leaderboard_image(ranking, mode):
         y = start_y + ((i - 1) * 48)
 
         # clean first name only
-        clean_name = unidecode(name).strip()
-        clean_name = re.sub(r'[^a-zA-Z0-9 ]', '', clean_name)
-
+        clean_name = unidecode(str(name)).strip()
+        
+        # remove symbols but keep spaces
+        clean_name = re.sub(r'[^a-zA-Z0-9 ]+', '', clean_name)
+        
+        # remove extra spaces
+        clean_name = " ".join(clean_name.split())
+        
         if not clean_name:
-            clean_name = "User"
-
-        clean_name = clean_name.split()[0][:10]
+            clean_name = "Unknown"
+        
+        # max 14 chars so fit ho jaye
+        clean_name = clean_name[:14]
 
         # rank
         draw.text(
