@@ -397,7 +397,7 @@ async def count_messages(_, message):
         
         current = user_data.get("overall", 0)
         
-        if current % 100 == 0:
+        if current > 0 and current % 100 == 0:
             await message.reply_text(
                 f"🎉 Congratulations {message.from_user.mention}!\n\n"
                 f"You completed <b>{current}</b> messages.",
