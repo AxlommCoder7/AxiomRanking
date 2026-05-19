@@ -12,6 +12,6 @@ async def start_cmd(message: types.Message):
     )
 
 async def main():
-    await dp.start_polling(bot)
+    await dp.start_polling(Bot)
 
 asyncio.run(main())
