@@ -290,7 +290,7 @@ async def build_board(chat_id, mode):
 async def start_cmd(_, message):
     await message.reply_text(
         p(
-"""<tg-emoji emoji-id="5040016479722931047"></tg-emoji> <b>Welcome To Axiom Ranking Bot <tg-emoji emoji-id="6100570056884752399">💠</tg-emoji> </b>
+"""<tg-emoji emoji-id="5040016479722931047">✨</tg-emoji> <b>Welcome To Axiom Ranking Bot <tg-emoji emoji-id="6100570056884752399">💠</tg-emoji> </b>
 
 <b>Track group chats easily 📊</b>
 
