@@ -1,5 +1,5 @@
 import asyncio
-from aiogram import Bot, Dispatcher, types
+from aiogram import Dispatcher, types
 from aiogram.filters import Command
 
 dp = Dispatcher()
@@ -12,6 +12,6 @@ async def start_cmd(message: types.Message):
     )
 
 async def main():
-    await dp.start_polling(Bot)
+    await dp.start_polling()
 
 asyncio.run(main())
