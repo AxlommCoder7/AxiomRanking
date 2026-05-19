@@ -8,6 +8,8 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMedi
 from motor.motor_asyncio import AsyncIOMotorClient
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from premium import p, PREMIUM_PARSE
+from pyrogram import Client, filters
+from pyrogram.enums import ParseMode
 
 
 print("Starting bot...")
@@ -21,7 +23,8 @@ bot = Client(
     "ranking_bot",
     api_id=API_ID,
     api_hash=API_HASH,
-    bot_token=BOT_TOKEN
+    bot_token=BOT_TOKEN,
+    parse_mode=ParseMode.HTML
 )
 
 mongo = AsyncIOMotorClient(MONGO_URL)
@@ -284,6 +287,13 @@ async def build_board(chat_id, mode):
 
     text += f"\n✉️ **Total Messages: {total}**"
     return text, ranking
+
+
+@bot.on_message(filters.command("test"))
+async def test(_, message):
+    await message.reply_text(
+        'Premium test <tg-emoji emoji-id="6260064483465502441">❤️‍🔥</tg-emoji>'
+    )
 
 
 @bot.on_message(filters.command("start"))
