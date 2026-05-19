@@ -1,5 +1,5 @@
 import asyncio
-from aiogram import Dispatcher, types
+from aiogram import bot, Dispatcher, types
 from aiogram.filters import Command
 
 dp = Dispatcher()
