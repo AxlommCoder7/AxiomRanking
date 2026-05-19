@@ -155,7 +155,7 @@ def generate_leaderboard_image(ranking, mode):
     )
 
     draw.text(
-        (1020, 65),
+        (1010, 60),
         mode.upper(),
         font=smalll_font,
         fill=TEXT_WHITE
