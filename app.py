@@ -58,72 +58,106 @@ def generate_leaderboard_image(ranking, mode):
     width = 1280
     height = 720
 
-    img = Image.new("RGB", (width, height), (8, 12, 25))
+    img = Image.new("RGB", (width, height), (6, 10, 22))
     draw = ImageDraw.Draw(img)
 
-    cyan = (0, 255, 255)
+    bg2 = (10, 18, 35)
+    cyan = (0, 220, 255)
+    blue = (0, 150, 255)
     white = (255, 255, 255)
-    blue = (0, 180, 255)
-    gray = (120, 130, 160)
+    gray = (130, 150, 180)
+    dark = (15, 25, 45)
 
     try:
-        title_font = ImageFont.truetype("arial.ttf", 70)
-        text_font = ImageFont.truetype("arial.ttf", 32)
+        title_font = ImageFont.truetype("arial.ttf", 82)
+        text_font = ImageFont.truetype("arial.ttf", 34)
         small_font = ImageFont.truetype("arial.ttf", 24)
+        count_font = ImageFont.truetype("arial.ttf", 28)
     except:
         title_font = ImageFont.load_default()
         text_font = ImageFont.load_default()
         small_font = ImageFont.load_default()
+        count_font = ImageFont.load_default()
 
-    draw.text((360, 40), "LEADERBOARD", font=title_font, fill=cyan)
-    draw.text((30, 20), "AXIOM RANKING", font=small_font, fill=blue)
-    draw.text((1040, 20), "PREMIUM", font=small_font, fill=cyan)
+    # background panels
+    draw.rounded_rectangle(
+        (35, 35, 1245, 685),
+        radius=30,
+        fill=bg2,
+        outline=(0, 90, 180),
+        width=3
+    )
+
+    # title
+    draw.text((330, 55), "LEADERBOARD", fill=white, font=title_font)
+    draw.text((70, 55), "AXIOM RANKING", fill=cyan, font=small_font)
+    draw.text((1070, 55), "PREMIUM", fill=cyan, font=small_font)
 
     max_count = ranking[0][2] if ranking else 1
-
-    start_y = 160
+    start_y = 180
 
     for i, (name, user_id, count) in enumerate(ranking[:10], start=1):
         y = start_y + ((i - 1) * 48)
 
-        clean_name = re.sub(r'[^a-zA-Z0-9 ]', '', name)[:12]
+        clean_name = re.sub(r'[^a-zA-Z0-9 ]', '', name)[:14]
 
+        # rank
         draw.text(
-            (60, y),
-            f"{i}. {clean_name}",
-            font=text_font,
-            fill=white
+            (70, y),
+            f"{i}.",
+            fill=white,
+            font=text_font
         )
 
-        bar_x = 300
-        bar_y = y + 8
-        bar_width = int((count / max_count) * 700)
+        # username
+        draw.text(
+            (130, y),
+            clean_name,
+            fill=white,
+            font=text_font
+        )
 
+        bar_x = 360
+        bar_y = y + 8
+        full_width = 620
+        filled = int((count / max_count) * full_width)
+
+        # outer bar
         draw.rounded_rectangle(
-            (bar_x, bar_y, bar_x + 700, bar_y + 28),
-            radius=14,
-            outline=(30, 60, 100),
+            (bar_x, bar_y, bar_x + full_width, bar_y + 28),
+            radius=15,
+            fill=dark,
+            outline=(0, 100, 190),
             width=2
         )
 
+        # filled bar
         draw.rounded_rectangle(
-            (bar_x, bar_y, bar_x + bar_width, bar_y + 28),
-            radius=14,
+            (bar_x, bar_y, bar_x + filled, bar_y + 28),
+            radius=15,
             fill=blue
         )
 
-        draw.text(
-            (1020, y),
-            str(count),
-            font=text_font,
-            fill=cyan
+        # count box
+        draw.rounded_rectangle(
+            (1010, y - 2, 1110, y + 34),
+            radius=12,
+            fill=(8, 30, 60)
         )
 
+        draw.text(
+            (1040, y + 2),
+            str(count),
+            fill=cyan,
+            font=count_font
+        )
+
+    # footer
     draw.text(
-        (40, 670),
-        f"MODE: {mode.upper()}",
-        font=small_font,
-        fill=gray
+        (70, 640),
+        f"MODE : {mode.upper()}",
+        fill=gray,
+        font=small_font
     )
 
     file_path = "leaderboard.png"
