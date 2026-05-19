@@ -118,11 +118,13 @@ def generate_leaderboard_image(ranking, mode):
         title_font = ImageFont.truetype("cfont.ttf", 88)
         name_font = ImageFont.truetype("f.ttf", 22)
         small_font = ImageFont.truetype("f.ttf", 26)
+        smalll_font = ImageFont.truetype("f.ttf", 46)
         count_font = ImageFont.truetype("cfont.ttf", 28)
     except:
         title_font = ImageFont.load_default()
         name_font = ImageFont.load_default()
         small_font = ImageFont.load_default()
+        smalll_font = ImageFont.load_default()
         count_font = ImageFont.load_default()
 
     # main glass card
@@ -143,9 +145,9 @@ def generate_leaderboard_image(ranking, mode):
     )
 
     draw.text(
-        (1030, 50),
+        (1030, 65),
         mode.upper(),
-        font=small_font,
+        font=smalll_font,
         fill=TEXT_WHITE
     )
 
