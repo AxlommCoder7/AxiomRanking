@@ -4,6 +4,7 @@ from datetime import datetime
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from motor.motor_asyncio import AsyncIOMotorClient
+from PIL import Image, ImageDraw, ImageFont
 
 print("Starting bot...")
 
@@ -53,6 +54,81 @@ def get_buttons(active):
         ]
     ])
 
+def generate_leaderboard_image(ranking, mode):
+    width = 1280
+    height = 720
+
+    img = Image.new("RGB", (width, height), (8, 12, 25))
+    draw = ImageDraw.Draw(img)
+
+    cyan = (0, 255, 255)
+    white = (255, 255, 255)
+    blue = (0, 180, 255)
+    gray = (120, 130, 160)
+
+    try:
+        title_font = ImageFont.truetype("arial.ttf", 70)
+        text_font = ImageFont.truetype("arial.ttf", 32)
+        small_font = ImageFont.truetype("arial.ttf", 24)
+    except:
+        title_font = ImageFont.load_default()
+        text_font = ImageFont.load_default()
+        small_font = ImageFont.load_default()
+
+    draw.text((360, 40), "LEADERBOARD", font=title_font, fill=cyan)
+    draw.text((30, 20), "AXIOM RANKING", font=small_font, fill=blue)
+    draw.text((1040, 20), "PREMIUM", font=small_font, fill=cyan)
+
+    max_count = ranking[0][2] if ranking else 1
+
+    start_y = 160
+
+    for i, (name, user_id, count) in enumerate(ranking[:10], start=1):
+        y = start_y + ((i - 1) * 48)
+
+        clean_name = re.sub(r'[^a-zA-Z0-9 ]', '', name)[:12]
+
+        draw.text(
+            (60, y),
+            f"{i}. {clean_name}",
+            font=text_font,
+            fill=white
+        )
+
+        bar_x = 300
+        bar_y = y + 8
+        bar_width = int((count / max_count) * 700)
+
+        draw.rounded_rectangle(
+            (bar_x, bar_y, bar_x + 700, bar_y + 28),
+            radius=14,
+            outline=(30, 60, 100),
+            width=2
+        )
+
+        draw.rounded_rectangle(
+            (bar_x, bar_y, bar_x + bar_width, bar_y + 28),
+            radius=14,
+            fill=blue
+        )
+
+        draw.text(
+            (1020, y),
+            str(count),
+            font=text_font,
+            fill=cyan
+        )
+
+    draw.text(
+        (40, 670),
+        f"MODE: {mode.upper()}",
+        font=small_font,
+        fill=gray
+    )
+
+    file_path = "leaderboard.png"
+    img.save(file_path)
+    return file_path
 
 async def build_board(chat_id, mode):
     ranking = []
@@ -86,7 +162,7 @@ async def build_board(chat_id, mode):
         total += count
 
     text += f"\n✉️ Total Messages: {total}"
-    return text
+    return text, ranking
 
 
 @bot.on_message(filters.command("start"))
@@ -129,13 +205,19 @@ async def count_messages(_, message):
             if cmd.startswith("/ranking"):
                 print("Ranking command detected inside count handler")
 
-                text = await build_board(
+                text, ranking = await build_board(
                     message.chat.id,
                     "overall"
                 )
-
-                await message.reply_text(
-                    text,
+                
+                photo = generate_leaderboard_image(
+                    ranking,
+                    "overall"
+                )
+                
+                await message.reply_photo(
+                    photo=photo,
+                    caption=text,
                     reply_markup=get_buttons("overall")
                 )
                 return
@@ -168,10 +250,21 @@ async def count_messages(_, message):
 async def callback_handler(_, query):
     try:
         mode = query.data
-        text = await build_board(query.message.chat.id, mode)
-
-        await query.message.edit_text(
-            text,
+        text, ranking = await build_board(
+            query.message.chat.id,
+            mode
+        )
+        
+        photo = generate_leaderboard_image(
+            ranking,
+            mode
+        )
+        
+        await query.message.delete()
+        
+        await query.message.reply_photo(
+            photo=photo,
+            caption=text,
             reply_markup=get_buttons(mode)
         )
         await query.answer()
