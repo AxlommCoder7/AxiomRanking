@@ -62,15 +62,24 @@ async def build_board(chat_id, mode):
         else:
             count = user.get("weekly", {}).get(week(), 0)
 
-        ranking.append((user.get("name", "User"), count))
+        ranking.append(
+            (
+                user.get("name", "User"),
+                user.get("user_id"),
+                count
+            )
+        )
 
     ranking.sort(key=lambda x: x[1], reverse=True)
 
     text = f"🏆 **Leaderboard ({mode.upper()})**\n\n"
 
     total = 0
-    for i, (name, count) in enumerate(ranking[:10], start=1):
-        text += f"{i}. {name} ➜ {count}\n"
+    for i, (name, user_id, count) in enumerate(ranking[:10], start=1):
+        user_id = user.get("user_id")
+        mention = f"[{name}](tg://user?id={user_id})"
+        
+        text += f"{i}. {mention} ➜ {count}\n"
         total += count
 
     text += f"\n📩 Total Messages: {total}"
