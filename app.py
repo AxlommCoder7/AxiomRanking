@@ -288,14 +288,17 @@ async def build_board(chat_id, mode):
 
 @bot.on_message(filters.command("start"))
 async def start_cmd(_, message):
-    await message.reply_text(p(
-        """<tg-emoji emoji-id="5040016479722931047">✨</tg-emoji> **Welcome To Axiom Ranking Bot**
+    await message.reply_text(
+        p(
+"""<tg-emoji emoji-id="5040016479722931047">✨</tg-emoji> **Welcome To Axiom Ranking Bot**
 
 Track group chats easily 📊
 
 Commands:
 • /ranking - show leaderboard
-"""),
+"""     
+        ),
+        parse_mode=PREMIUM_PARSE
         reply_markup=InlineKeyboardMarkup([
             [
                 InlineKeyboardButton("Channel", url="https://t.me/axiombots"),
