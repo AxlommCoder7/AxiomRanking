@@ -58,40 +58,68 @@ def generate_leaderboard_image(ranking, mode):
     width = 1280
     height = 720
 
-    img = Image.new("RGB", (width, height), (6, 10, 22))
+    img = Image.new("RGB", (width, height), (4, 8, 20))
     draw = ImageDraw.Draw(img)
 
-    bg2 = (10, 18, 35)
-    cyan = (0, 220, 255)
-    blue = (0, 150, 255)
+    # colors
+    bg_panel = (8, 18, 38)
+    cyan = (0, 240, 255)
+    blue = (0, 140, 255)
     white = (255, 255, 255)
-    gray = (130, 150, 180)
-    dark = (15, 25, 45)
+    gray = (140, 160, 190)
+    dark_bar = (10, 28, 55)
 
+    # fonts from uploaded files
     try:
-        title_font = ImageFont.truetype("arial.ttf", 82)
-        text_font = ImageFont.truetype("arial.ttf", 34)
-        small_font = ImageFont.truetype("arial.ttf", 24)
-        count_font = ImageFont.truetype("arial.ttf", 28)
-    except:
+        title_font = ImageFont.truetype("cfont.ttf", 88)
+        name_font = ImageFont.truetype("f.ttf", 30)
+        small_font = ImageFont.truetype("f.ttf", 22)
+        count_font = ImageFont.truetype("cfont.ttf", 28)
+    except Exception as e:
+        print(f"FONT ERROR: {e}")
         title_font = ImageFont.load_default()
-        text_font = ImageFont.load_default()
+        name_font = ImageFont.load_default()
         small_font = ImageFont.load_default()
         count_font = ImageFont.load_default()
 
-    # background panels
+    # main card
     draw.rounded_rectangle(
-        (35, 35, 1245, 685),
-        radius=30,
-        fill=bg2,
-        outline=(0, 90, 180),
-        width=3
+        (25, 25, 1255, 695),
+        radius=35,
+        fill=bg_panel,
+        outline=(0, 100, 200),
+        width=4
     )
 
-    # title
-    draw.text((330, 55), "LEADERBOARD", fill=white, font=title_font)
-    draw.text((70, 55), "AXIOM RANKING", fill=cyan, font=small_font)
-    draw.text((1070, 55), "PREMIUM", fill=cyan, font=small_font)
+    # watermark logo style
+    draw.text(
+        (40, 40),
+        "AXIOM BOT",
+        font=small_font,
+        fill=(0, 120, 180)
+    )
+
+    draw.text(
+        (990, 42),
+        "PREMIUM",
+        font=small_font,
+        fill=cyan
+    )
+
+    # shadow title
+    draw.text(
+        (318, 58),
+        "LEADERBOARD",
+        font=title_font,
+        fill=(0, 60, 90)
+    )
+
+    draw.text(
+        (310, 50),
+        "LEADERBOARD",
+        font=title_font,
+        fill=white
+    )
 
     max_count = ranking[0][2] if ranking else 1
     start_y = 180
@@ -103,61 +131,68 @@ def generate_leaderboard_image(ranking, mode):
 
         # rank
         draw.text(
-            (70, y),
+            (65, y),
             f"{i}.",
-            fill=white,
-            font=text_font
+            font=name_font,
+            fill=white
         )
 
-        # username
+        # user name
         draw.text(
             (130, y),
             clean_name,
-            fill=white,
-            font=text_font
+            font=name_font,
+            fill=white
         )
 
-        bar_x = 360
+        bar_x = 350
         bar_y = y + 8
         full_width = 620
         filled = int((count / max_count) * full_width)
 
-        # outer bar
+        # background bar
         draw.rounded_rectangle(
             (bar_x, bar_y, bar_x + full_width, bar_y + 28),
-            radius=15,
-            fill=dark,
-            outline=(0, 100, 190),
+            radius=14,
+            fill=dark_bar,
+            outline=(0, 90, 180),
             width=2
         )
 
         # filled bar
         draw.rounded_rectangle(
             (bar_x, bar_y, bar_x + filled, bar_y + 28),
-            radius=15,
+            radius=14,
             fill=blue
         )
 
-        # count box
+        # value box
         draw.rounded_rectangle(
-            (1010, y - 2, 1110, y + 34),
+            (1020, y - 1, 1135, y + 34),
             radius=12,
-            fill=(8, 30, 60)
+            fill=(8, 35, 70)
         )
 
         draw.text(
-            (1040, y + 2),
+            (1052, y + 2),
             str(count),
-            fill=cyan,
-            font=count_font
+            font=count_font,
+            fill=cyan
         )
 
     # footer
     draw.text(
-        (70, 640),
+        (70, 645),
         f"MODE : {mode.upper()}",
-        fill=gray,
-        font=small_font
+        font=small_font,
+        fill=gray
+    )
+
+    draw.text(
+        (980, 645),
+        "@Axiombots",
+        font=small_font,
+        fill=(0, 140, 200)
     )
 
     file_path = "leaderboard.png"
