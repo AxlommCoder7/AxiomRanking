@@ -289,7 +289,7 @@ async def build_board(chat_id, mode):
 
         mention = f'<a href="tg://user?id={user_id}">{clean_name}</a>'
 
-        text += f"<blockquote>{i}. {mention} ➜ {count}\n"
+        text += f"{i}. {mention} ➜ {count}\n"
         total += count
 
     text += f"\n✉️ <b>Total Messages: {total}</b>"
@@ -372,6 +372,7 @@ async def count_messages(_, message):
                 return
 
         await users.update_one(
+            
             {
                 "chat_id": message.chat.id,
                 "user_id": message.from_user.id
@@ -389,6 +390,27 @@ async def count_messages(_, message):
             upsert=True
         )
 
+        user_data = await users.find_one({
+            "chat_id": message.chat.id,
+            "user_id": message.from_user.id
+        })
+        
+        current = user_data.get("overall", 0)
+        
+        if current % 100 == 0:
+            await message.reply_text(
+                f"🎉 Congratulations {message.from_user.mention}!\n\n"
+                f"You completed <b>{current}</b> messages.",
+                parse_mode=ParseMode.HTML,
+                reply_markup=InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton(
+                            "🔥 View Ranking",
+                            callback_data="overall"
+                        )
+                    ]
+                ])
+            )
         print(f"Count updated: {message.from_user.first_name}")
 
     except Exception as e:
