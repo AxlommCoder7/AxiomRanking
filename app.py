@@ -298,7 +298,7 @@ Commands:
 • /ranking - show leaderboard
 """     
         ),
-        parse_mode=PREMIUM_PARSE
+        parse_mode=PREMIUM_PARSE,
         reply_markup=InlineKeyboardMarkup([
             [
                 InlineKeyboardButton("Channel", url="https://t.me/axiombots"),
