@@ -67,6 +67,7 @@ from unidecode import unidecode
 
 
 def generate_leaderboard_image(ranking, mode):
+    TEXT_WHITE = (255, 255, 255)
     width, height = 1280, 720
 
     # random premium palettes
@@ -127,11 +128,13 @@ def generate_leaderboard_image(ranking, mode):
         title_font = ImageFont.truetype("cfont.ttf", 88)
         name_font = ImageFont.truetype("f.ttf", 22)
         small_font = ImageFont.truetype("f.ttf", 26)
+        smalll_font = ImageFont.truetype("f.ttf", 66)
         count_font = ImageFont.truetype("cfont.ttf", 28)
     except:
         title_font = ImageFont.load_default()
         name_font = ImageFont.load_default()
         small_font = ImageFont.load_default()
+        smalll_font = ImageFont.load_default()
         count_font = ImageFont.load_default()
 
     # main glass card
@@ -145,17 +148,17 @@ def generate_leaderboard_image(ranking, mode):
 
     # top labels
     draw.text(
-        (42, 38),
+        (47, 43),
         "Dev:- Maanav",
         font=small_font,
-        fill=accent
+        fill=TEXT_WHITE
     )
 
     draw.text(
-        (1030, 40),
+        (1030, 65),
         mode.upper(),
-        font=small_font,
-        fill=accent
+        font=smalll_font,
+        fill=TEXT_WHITE
     )
 
     # 3D title
