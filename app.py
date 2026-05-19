@@ -298,7 +298,7 @@ async def start_cmd(_, message):
 • /ranking <b>- show leaderboard <tg-emoji emoji-id="6260273356315040975">💀</tg-emoji> </b>
 """     
         ),
-        parse_mode="html",
+        parse_mode=PREMIUM_PARSE,
         reply_markup=InlineKeyboardMarkup([
             [
                 InlineKeyboardButton("Channel", url="https://t.me/axiombots"),
