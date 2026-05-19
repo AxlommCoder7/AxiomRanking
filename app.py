@@ -138,16 +138,22 @@ async def count_messages(_, message):
         print(f"COUNT ERROR: {e}")
 
 
-@bot.on_message(filters.command("ranking"))
+@bot.on_message(filters.regex(r"^/ranking(@\w+)?$"))
 async def ranking_cmd(_, message):
     try:
-        print("/ranking triggered")
+        print(f"RANKING COMMAND RECEIVED: {message.text}")
 
-        text = await build_board(message.chat.id, "overall")
+        text = await build_board(
+            message.chat.id,
+            "overall"
+        )
+
         await message.reply_text(
             text,
             reply_markup=get_buttons("overall")
         )
+
+        print("Ranking sent successfully")
 
     except Exception as e:
         print(f"RANK ERROR: {e}")
