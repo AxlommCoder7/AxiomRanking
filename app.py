@@ -139,8 +139,7 @@ def generate_leaderboard_image(ranking, mode):
         (45, 41),
         "Dev:- Maanav",
         font=small_font,
-        fill=TEXT_WHITE, 
-        anchor="la"
+        fill=TEXT_WHITE
     )
 
     draw.text(
