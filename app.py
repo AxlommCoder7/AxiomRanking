@@ -93,14 +93,14 @@ def generate_leaderboard_image(ranking, mode):
     # watermark logo style
     draw.text(
         (40, 40),
-        "AXIOM BOT",
+        "Dev:- Maanav",
         font=small_font,
         fill=(0, 120, 180)
     )
 
     draw.text(
         (990, 42),
-        "PREMIUM",
+        "",
         font=small_font,
         fill=cyan
     )
@@ -178,21 +178,6 @@ def generate_leaderboard_image(ranking, mode):
             font=count_font,
             fill=cyan
         )
-
-    # footer
-    draw.text(
-        (70, 645),
-        f"MODE : {mode.upper()}",
-        font=small_font,
-        fill=gray
-    )
-
-    draw.text(
-        (980, 645),
-        "@Axiombots",
-        font=small_font,
-        fill=(0, 140, 200)
-    )
 
     file_path = "leaderboard.png"
     img.save(file_path)
