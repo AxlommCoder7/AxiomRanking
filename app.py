@@ -4,7 +4,7 @@ import random
 from datetime import datetime
 from unidecode import unidecode
 from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
 from motor.motor_asyncio import AsyncIOMotorClient
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
@@ -320,22 +320,27 @@ async def count_messages(_, message):
             cmd = message.text.split()[0].lower()
 
             if cmd.startswith("/ranking"):
-                print("Ranking command detected inside count handler")
-
+                loading = await message.reply_text(
+                    "⚡ Fetching leaderboard by Axiom Bots..."
+                )
+            
                 text, ranking = await build_board(
                     message.chat.id,
                     "overall"
                 )
-                
+            
                 photo = generate_leaderboard_image(
                     ranking,
                     "overall"
                 )
-                
+            
+                await loading.delete()
+            
                 await message.reply_photo(
                     photo=photo,
                     caption=text,
-                    reply_markup=get_buttons("overall")
+                    reply_markup=get_buttons("overall"),
+                    has_spoiler=True
                 )
                 return
 
@@ -364,27 +369,33 @@ async def count_messages(_, message):
 
 
 @bot.on_callback_query()
+@bot.on_callback_query()
 async def callback_handler(_, query):
     try:
         mode = query.data
+
+        await query.answer("Updating...")
+
         text, ranking = await build_board(
             query.message.chat.id,
             mode
         )
-        
+
         photo = generate_leaderboard_image(
             ranking,
             mode
         )
-        
-        await query.message.delete()
-        
-        await query.message.reply_photo(
-            photo=photo,
-            caption=text,
+
+        await bot.edit_message_media(
+            chat_id=query.message.chat.id,
+            message_id=query.message.id,
+            media=InputMediaPhoto(
+                media=photo,
+                caption=text,
+                has_spoiler=True
+            ),
             reply_markup=get_buttons(mode)
         )
-        await query.answer()
 
     except Exception as e:
         print(f"CALLBACK ERROR: {e}")
