@@ -78,8 +78,9 @@ async def build_board(chat_id, mode):
 
     total = 0
     for i, (name, user_id, count) in enumerate(ranking[:10], start=1):
-        mention = f"[{name}](tg://user?id={user_id})"
-        
+        clean_name = re.sub(r'[\[\]\(\)_*`]', '', name)
+        mention = f"[{clean_name}](tg://user?id={user_id})"
+    
         text += f"{i}. {mention} ➜ {count}\n"
         total += count
 
