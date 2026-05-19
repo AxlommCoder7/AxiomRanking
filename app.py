@@ -75,9 +75,6 @@ def generate_leaderboard_image(ranking, mode):
         ((5, 18, 35), (10, 60, 120), (0, 170, 255)),
         ((35, 10, 10), (90, 20, 20), (255, 70, 70)),
         ((35, 20, 5), (100, 50, 10), (255, 160, 0)),
-        ((30, 30, 5), (90, 90, 20), (255, 230, 0)),
-        ((12, 30, 30), (20, 100, 100), (0, 255, 255)),
-        ((25, 10, 35), (60, 20, 100), (220, 120, 255)),
     ]
 
     bg1, bg2, accent = random.choice(palettes)
@@ -85,7 +82,7 @@ def generate_leaderboard_image(ranking, mode):
     img = Image.new("RGB", (width, height), bg1)
     draw = ImageDraw.Draw(img)
 
-    # ---------------- BACKGROUND ----------------
+    # ---------------- background gradient ----------------
     for y in range(height):
         ratio = y / height
         r = int(bg1[0] * (1 - ratio) + bg2[0] * ratio)
@@ -93,42 +90,45 @@ def generate_leaderboard_image(ranking, mode):
         b = int(bg1[2] * (1 - ratio) + bg2[2] * ratio)
         draw.line([(0, y), (width, y)], fill=(r, g, b))
 
-    # stars/grid texture
+    # stars
     for _ in range(250):
-        x = random.randint(0, width)
-        y = random.randint(0, height)
+        x = random.randint(0, width - 1)
+        y = random.randint(0, height - 1)
         draw.point((x, y), fill=(255, 255, 255))
 
-    # blur glow circles
+    # glow circles
     overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
     odraw = ImageDraw.Draw(overlay)
 
     for _ in range(8):
         x = random.randint(0, width)
         y = random.randint(0, height)
-        s = random.randint(150, 300)
-        odraw.ellipse((x, y, x+s, y+s), fill=(*accent, 40))
+        s = random.randint(150, 320)
+        odraw.ellipse(
+            (x, y, x + s, y + s),
+            fill=(*accent, 35)
+        )
 
     overlay = overlay.filter(ImageFilter.GaussianBlur(80))
     img.paste(overlay, (0, 0), overlay)
 
     draw = ImageDraw.Draw(img)
 
-    # ---------------- FONTS ----------------
+    # ---------------- fonts ----------------
     try:
-        title_font = ImageFont.truetype("cfont.ttf", 90)
-        name_font = ImageFont.truetype("f.ttf", 25)
+        title_font = ImageFont.truetype("arialbd.ttf", 78)
+        name_font = ImageFont.truetype("f.ttf", 24)
         small_font = ImageFont.truetype("f.ttf", 26)
-        count_font = ImageFont.truetype("cfont.ttf", 34)
+        count_font = ImageFont.truetype("arialbd.ttf", 32)
     except:
         title_font = ImageFont.load_default()
         name_font = ImageFont.load_default()
         small_font = ImageFont.load_default()
         count_font = ImageFont.load_default()
 
-    # ---------------- MAIN OUTER ----------------
+    # ---------------- outer border ----------------
     draw.rounded_rectangle(
-        (25, 25, 1255, 695),
+        (20, 20, 1260, 700),
         radius=28,
         fill=(4, 8, 20),
         outline=accent,
@@ -136,132 +136,189 @@ def generate_leaderboard_image(ranking, mode):
     )
 
     # glow corners
-    for x, y in [(25,25),(1225,25),(25,665),(1225,665)]:
-        draw.rectangle((x, y, x+30, y+4), fill=accent)
-        draw.rectangle((x, y, x+4, y+30), fill=accent)
+    corners = [(20, 20), (1230, 20), (20, 670), (1230, 670)]
+    for x, y in corners:
+        draw.rectangle((x, y, x + 30, y + 4), fill=accent)
+        draw.rectangle((x, y, x + 4, y + 30), fill=accent)
 
-    # ---------------- TITLE BOX ----------------
+    # ---------------- title box ----------------
     draw.rounded_rectangle(
-        (300, 20, 980, 145),
-        radius=20,
-        fill=(6, 12, 24),
+        (285, 18, 995, 150),
+        radius=24,
+        fill=(7, 14, 28),
         outline=accent,
         width=3
     )
 
     title = "LEADERBOARD"
 
-    # 3D metallic text
-    draw.text((352, 42), title, font=title_font, fill=(20,20,20))
-    draw.text((348, 38), title, font=title_font, fill=(90,90,90))
-    draw.text((344, 32), title, font=title_font, fill=(255,255,255))
+    draw.text((347, 45), title, font=title_font, fill=(25, 25, 25))
+    draw.text((343, 40), title, font=title_font, fill=(70, 70, 70))
+    draw.text((340, 35), title, font=title_font, fill=(170, 170, 170))
+    draw.text((337, 30), title, font=title_font, fill=(255, 255, 255))
 
-    draw.text((560, 118), "PREMIUM", font=small_font, fill=accent)
+    draw.text((565, 118), "PREMIUM", font=small_font, fill=accent)
 
-    # left logo
-    draw.text((45, 45), "AXIOM\nRANKING", font=small_font, fill=(255,255,255))
+    # ---------------- left branding ----------------
+    draw.text(
+        (45, 45),
+        "AXIOM\nRANKING",
+        font=small_font,
+        fill=(255, 255, 255)
+    )
 
-    # right premium box
+    # ---------------- right premium box ----------------
     draw.rounded_rectangle(
-        (1035, 35, 1230, 120),
-        radius=16,
-        fill=(6,12,24),
+        (1035, 30, 1230, 118),
+        radius=18,
+        fill=(7, 14, 28),
         outline=accent,
         width=2
     )
-    draw.text((1070, 48), "AXIOM BOT", font=small_font, fill=(255,255,255))
+
+    draw.text((1070, 48), "AXIOM BOT", font=small_font, fill=(255, 255, 255))
     draw.text((1088, 82), "PREMIUM", font=name_font, fill=accent)
 
     def medal(rank):
-        return {1:"🥇",2:"🥈",3:"🥉"}.get(rank, "👤")
+        return {
+            1: "🥇",
+            2: "🥈",
+            3: "🥉"
+        }.get(rank, "👤")
 
     max_count = ranking[0][2] if ranking else 1
-    start_y = 190
+    start_y = 195
 
+    # ---------------- rows ----------------
     for i, (name, user_id, count) in enumerate(ranking[:10], start=1):
-        y = start_y + ((i-1)*48)
+        y = start_y + ((i - 1) * 49)
 
         clean_name = unidecode(str(name)).strip()
         clean_name = re.sub(r'[^a-zA-Z0-9 ]+', '', clean_name)
-        clean_name = " ".join(clean_name.split())[:18] or "Unknown"
+        clean_name = " ".join(clean_name.split())
+
+        if not clean_name:
+            clean_name = "Unknown"
+
+        clean_name = clean_name[:18]
 
         # row bg
         draw.rounded_rectangle(
-            (45, y-8, 1035, y+34),
-            radius=10,
+            (40, y - 7, 1050, y + 38),
+            radius=11,
             fill=(5, 12, 28),
             outline=accent,
             width=1
         )
 
-        draw.text((60, y), medal(i), font=name_font, fill=(255,255,255))
-        draw.text((120, y), clean_name, font=name_font, fill=(255,255,255))
+        # medal
+        draw.text(
+            (58, y + 2),
+            medal(i),
+            font=name_font,
+            fill=(255, 255, 255)
+        )
 
-        # bar bg
-        bar_x = 430
-        full_width = 470
+        # username
+        draw.text(
+            (120, y + 2),
+            clean_name,
+            font=name_font,
+            fill=(255, 255, 255)
+        )
+
+        # bar
+        bar_x = 420
+        bar_y = y + 6
+        full_width = 480
         filled = int((count / max_count) * full_width)
 
         draw.rounded_rectangle(
-            (bar_x, y+4, bar_x+full_width, y+26),
-            radius=8,
-            fill=(10,20,40),
+            (bar_x, bar_y, bar_x + full_width, bar_y + 28),
+            radius=10,
+            fill=(7, 18, 35),
             outline=accent,
             width=1
         )
 
-        # 3d gradient bar
         for k in range(filled):
-            ratio = k / max(filled,1)
+            ratio = k / max(filled, 1)
             color = (
-                int(accent[0]*(1-ratio)+20*ratio),
-                int(accent[1]*(1-ratio)+80*ratio),
-                int(accent[2]*(1-ratio)+255*ratio)
+                int(accent[0] * (1 - ratio) + 40 * ratio),
+                int(accent[1] * (1 - ratio) + 120 * ratio),
+                255
             )
             draw.line(
-                [(bar_x+k, y+5), (bar_x+k, y+25)],
+                [(bar_x + k, bar_y + 2), (bar_x + k, bar_y + 26)],
                 fill=color
             )
 
-        draw.polygon([
-            (bar_x+filled, y+4),
-            (bar_x+filled+10, y+4),
-            (bar_x+filled, y+26),
-            (bar_x+filled-10, y+26)
-        ], fill=(255,255,255))
+        if filled > 15:
+            draw.polygon(
+                [
+                    (bar_x + filled - 10, bar_y),
+                    (bar_x + filled, bar_y),
+                    (bar_x + filled - 10, bar_y + 28),
+                    (bar_x + filled - 20, bar_y + 28),
+                ],
+                fill=(255, 255, 255)
+            )
 
         # count box
         draw.rounded_rectangle(
-            (1080, y-3, 1215, y+30),
+            (1090, y - 2, 1230, y + 34),
             radius=8,
-            fill=(5,12,28),
+            fill=(5, 12, 28),
             outline=accent,
             width=1
         )
-        draw.text((1110, y), str(count), font=count_font, fill=accent)
 
-    total = sum(x[2] for x in ranking)
+        draw.text(
+            (1130, y + 3),
+            str(count),
+            font=count_font,
+            fill=accent
+        )
 
-    # bottom panels
+    total_msgs = sum(x[2] for x in ranking)
+
+    # ---------------- bottom panels ----------------
     draw.rounded_rectangle(
-        (55, 640, 390, 690),
+        (55, 646, 390, 700),
         radius=14,
-        fill=(6,12,24),
+        fill=(7, 14, 28),
         outline=accent,
         width=2
     )
-    draw.text((85, 653), f"TOTAL MSGS: {total}", font=small_font, fill=(255,255,255))
+
+    draw.text(
+        (85, 662),
+        f"TOTAL MSGS: {total_msgs}",
+        font=small_font,
+        fill=(255, 255, 255)
+    )
 
     draw.rounded_rectangle(
-        (450, 640, 820, 690),
+        (450, 646, 820, 700),
         radius=14,
-        fill=(6,12,24),
+        fill=(7, 14, 28),
         outline=accent,
         width=2
     )
-    draw.text((540, 653), f"MODE : {mode.upper()}", font=small_font, fill=accent)
 
-    draw.text((1010, 653), "POWERED BY AXIOM", font=name_font, fill=(255,255,255))
+    draw.text(
+        (545, 662),
+        f"MODE : {mode.upper()}",
+        font=small_font,
+        fill=accent
+    )
+
+    draw.text(
+        (1015, 662),
+        "POWERED BY AXIOM",
+        font=name_font,
+        fill=(255, 255, 255)
+    )
 
     file_path = "leaderboard.png"
     img.save(file_path)
