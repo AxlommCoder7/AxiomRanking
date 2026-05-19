@@ -64,7 +64,7 @@ def generate_leaderboard_image(ranking, mode):
     from PIL import Image, ImageDraw, ImageFont
     import os
 
-    TEMPLATE = "template.png"
+    TEMPLATE = "ranking_1.png"
 
     img = Image.open(TEMPLATE).convert("RGBA")
     draw = ImageDraw.Draw(img)
