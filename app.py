@@ -36,15 +36,17 @@ def get_buttons(active):
     return InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
-                f"Today {'✅' if active=='today' else ''}",
+                f"⏺️ Today {'✅' if active=='today' else ''}",
                 callback_data="today"
             ),
             InlineKeyboardButton(
-                f"Week {'✅' if active=='week' else ''}",
+                f"⏺️ Week {'✅' if active=='week' else ''}",
                 callback_data="week"
-            ),
+            )
+        ],
+        [
             InlineKeyboardButton(
-                f"Overall {'✅' if active=='overall' else ''}",
+                f"⏺️ Overall {'✅' if active=='overall' else ''}",
                 callback_data="overall"
             )
         ]
@@ -72,7 +74,7 @@ async def build_board(chat_id, mode):
 
     ranking.sort(key=lambda x: x[2], reverse=True)
 
-    text = f"🏆 **Leaderboard ({mode.upper()})**\n\n"
+    text = f"📈  **Leaderboard ({mode.upper()})**\n\n"
 
     total = 0
     for i, (name, user_id, count) in enumerate(ranking[:10], start=1):
@@ -81,7 +83,7 @@ async def build_board(chat_id, mode):
         text += f"{i}. {mention} ➜ {count}\n"
         total += count
 
-    text += f"\n📩 Total Messages: {total}"
+    text += f"\n✉️ Total Messages: {total}"
     return text
 
 
