@@ -281,7 +281,7 @@ async def build_board(chat_id, mode):
 
     ranking.sort(key=lambda x: x[2], reverse=True)
 
-    text = f"📈 <b>LEADERBOARD ({mode.upper()})</b>\n\n"
+    text = f"📈 <b>𝐋‌𝐄‌𝐀‌𝐃‌𝐄‌𝐑‌𝐁‌𝐎‌𝐀‌𝐑‌𝐃‌ ({mode.upper()})</b>\n\n"
 
     total = 0
     for i, (name, user_id, count) in enumerate(ranking[:10], start=1):
@@ -292,7 +292,7 @@ async def build_board(chat_id, mode):
         text += f"{i}. {mention} ➜ {count}\n"
         total += count
 
-    text += f"\n✉️ <b>Total Messages: {total}</b>"
+    text += f"\n✉️ <b>𝐓‌σᴛᴧʟ 𝐌‌єssᴧɢєs:: {total}</b>"
 
     return text, ranking
 
@@ -309,28 +309,29 @@ async def test(_, message):
 async def start_cmd(_, message):
     await message.reply_text(
         p(
-"""<tg-emoji emoji-id="5040016479722931047">✨</tg-emoji> <b>Welcome To Axiom Ranking Bot <tg-emoji emoji-id="6100570056884752399">💠</tg-emoji> </b>
+"""<tg-emoji emoji-id="5040016479722931047">✨</tg-emoji> <b>𝐖‌єʟᴄσϻє 𝐓‌σ 𝐀‌xɪσϻ 𝐑‌ᴧηᴋɪηɢ 𝐁‌σᴛ <tg-emoji emoji-id="6100570056884752399">💠</tg-emoji> </b>
 
-<b>Track group chats easily 📊</b>
+<b>𝐓‌ꝛᴧᴄᴋ ɢꝛσυᴘ ᴄʜᴧᴛs єᴧsɪʟʏ 📊</b>
 
-<b> <tg-emoji emoji-id="6260304872785059395">🔵</tg-emoji> Commands:</b>
-• /ranking <b>- show leaderboard <tg-emoji emoji-id="6260273356315040975">💀</tg-emoji> </b>
+<b> <tg-emoji emoji-id="6260304872785059395">🔵</tg-emoji> 𝐂‌σϻϻᴧηᴅs:</b>
+• /ranking <b>- sʜσᴡ ʟєᴧᴅєꝛʙσᴧꝛᴅ <tg-emoji emoji-id="6260273356315040975">💀</tg-emoji> </b>
 """     
         ),
         parse_mode=PREMIUM_PARSE,
         reply_markup=InlineKeyboardMarkup([
             [
-                InlineKeyboardButton("Channel", url="https://t.me/axiombots"),
-                InlineKeyboardButton("Group", url="https://t.me/axlomm")
-            ],
-            [
-                InlineKeyboardButton("Owner", url="https://t.me/xomnv")
-            ],
-            [
                 InlineKeyboardButton(
-                    "Add To Group",
+                    "☊₊ ᴧᴅᴅ ϻє ᴛσ ʏσυʀ ᴄʜᴧᴛ ₊☊",
                     url=f"https://t.me/{(await bot.get_me()).username}?startgroup=true"
                 )
+            ],
+            [
+                InlineKeyboardButton("ᴧxɪσϻ υᴘᴅᴧᴛєs ⎘", url="https://t.me/axiombots"),
+                InlineKeyboardButton("ᴧxɪσϻ sυᴘᴘσʀᴛ ☏︎", url="https://t.me/axlomm")
+            ],
+            [
+                InlineKeyboardButton("⌯ ᴧxɪσϻ ⌯", url="https://t.me/xomnv"),
+                InlineKeyboardButton("🛠️ sσυʀᴄє ᴄσᴅє", url="https://github.com/maanavbaby/AxiomRanking")
             ]
         ])
     )
@@ -423,7 +424,7 @@ async def callback_handler(_, query):
     try:
         mode = query.data
 
-        await query.answer("Updating...")
+        await query.answer("Updating Leaderboard By AxiomBot...")
 
         text, ranking = await build_board(
             query.message.chat.id,
