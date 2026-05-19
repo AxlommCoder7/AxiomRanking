@@ -57,6 +57,7 @@ def get_buttons(active):
     ])
 
 def generate_leaderboard_image(ranking, mode):
+    TEXT_WHITE = (255, 255, 255)
     width, height = 1280, 720
 
     # random premium palettes
