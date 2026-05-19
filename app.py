@@ -214,7 +214,7 @@ async def build_board(chat_id, mode):
         text += f"{i}. {mention} ➜ {count}\n"
         total += count
 
-    text += f"\n✉️ Total Messages: {total}"
+    text += f"\n✉️ **Total Messages: {total}**"
     return text, ranking
 
 
