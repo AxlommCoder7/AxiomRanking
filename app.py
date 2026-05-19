@@ -1,10 +1,13 @@
 import re
 import os
+import random
 from datetime import datetime
+from unidecode import unidecode
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from motor.motor_asyncio import AsyncIOMotorClient
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
+
 
 print("Starting bot...")
 
@@ -54,70 +57,105 @@ def get_buttons(active):
     ])
 
 def generate_leaderboard_image(ranking, mode):
-    width = 1280
-    height = 720
+    width, height = 1280, 720
 
-    img = Image.new("RGB", (width, height), (4, 8, 20))
+    # random premium palettes
+    palettes = [
+        ((8, 12, 30), (18, 45, 80), (0, 240, 255)),
+        ((20, 8, 30), (60, 20, 80), (255, 0, 180)),
+        ((8, 25, 18), (20, 80, 55), (0, 255, 170)),
+        ((15, 10, 35), (40, 25, 90), (180, 100, 255)),
+        ((5, 18, 35), (10, 60, 120), (0, 170, 255)),
+    ]
+
+    bg1, bg2, accent = random.choice(palettes)
+
+    img = Image.new("RGB", (width, height), bg1)
     draw = ImageDraw.Draw(img)
 
-    # colors
-    bg_panel = (8, 18, 38)
-    cyan = (0, 240, 255)
-    blue = (0, 140, 255)
-    white = (255, 255, 255)
-    gray = (140, 160, 190)
-    dark_bar = (10, 28, 55)
+    # -------- gradient background ----------
+    for y in range(height):
+        ratio = y / height
+        r = int(bg1[0] * (1 - ratio) + bg2[0] * ratio)
+        g = int(bg1[1] * (1 - ratio) + bg2[1] * ratio)
+        b = int(bg1[2] * (1 - ratio) + bg2[2] * ratio)
+        draw.line([(0, y), (width, y)], fill=(r, g, b))
 
-    # fonts from uploaded files
+    # blur circles
+    overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    odraw = ImageDraw.Draw(overlay)
+
+    for _ in range(8):
+        x = random.randint(0, width)
+        y = random.randint(0, height)
+        size = random.randint(120, 260)
+
+        odraw.ellipse(
+            (x, y, x + size, y + size),
+            fill=(*accent, 35)
+        )
+
+    overlay = overlay.filter(ImageFilter.GaussianBlur(60))
+    img.paste(overlay, (0, 0), overlay)
+
+    draw = ImageDraw.Draw(img)
+
+    # fonts
     try:
         title_font = ImageFont.truetype("cfont.ttf", 88)
-        name_font = ImageFont.truetype("f.ttf", 30)
-        small_font = ImageFont.truetype("f.ttf", 22)
+        name_font = ImageFont.truetype("f.ttf", 24)
+        small_font = ImageFont.truetype("f.ttf", 26)
         count_font = ImageFont.truetype("cfont.ttf", 28)
-    except Exception as e:
-        print(f"FONT ERROR: {e}")
+    except:
         title_font = ImageFont.load_default()
         name_font = ImageFont.load_default()
         small_font = ImageFont.load_default()
         count_font = ImageFont.load_default()
 
-    # main card
+    # main glass card
     draw.rounded_rectangle(
         (25, 25, 1255, 695),
         radius=35,
-        fill=bg_panel,
-        outline=(0, 100, 200),
+        fill=(5, 10, 25, 180),
+        outline=accent,
         width=4
     )
 
-    # watermark logo style
+    # top labels
     draw.text(
-        (40, 40),
+        (42, 38),
         "Dev:- Maanav",
         font=small_font,
-        fill=(0, 120, 180)
+        fill=accent
     )
 
     draw.text(
-        (990, 42),
-        "",
+        (1030, 40),
+        mode.upper(),
         font=small_font,
-        fill=cyan
+        fill=accent
     )
 
-    # shadow title
-    draw.text(
-        (318, 58),
-        "LEADERBOARD",
-        font=title_font,
-        fill=(0, 60, 90)
-    )
+    # 3D title
+    title = "LEADERBOARD"
 
     draw.text(
-        (310, 50),
-        "LEADERBOARD",
+        (315, 60),
+        title,
         font=title_font,
-        fill=white
+        fill=(20, 20, 20)
+    )
+    draw.text(
+        (312, 55),
+        title,
+        font=title_font,
+        fill=(80, 80, 80)
+    )
+    draw.text(
+        (308, 48),
+        title,
+        font=title_font,
+        fill=(255, 255, 255)
     )
 
     max_count = ranking[0][2] if ranking else 1
@@ -126,57 +164,65 @@ def generate_leaderboard_image(ranking, mode):
     for i, (name, user_id, count) in enumerate(ranking[:10], start=1):
         y = start_y + ((i - 1) * 48)
 
-        clean_name = re.sub(r'[^a-zA-Z0-9 ]', '', name)[:14]
+        # clean first name only
+        clean_name = unidecode(name).strip()
+        clean_name = re.sub(r'[^a-zA-Z0-9 ]', '', clean_name)
+
+        if not clean_name:
+            clean_name = "User"
+
+        clean_name = clean_name.split()[0][:10]
 
         # rank
         draw.text(
-            (65, y),
+            (60, y),
             f"{i}.",
             font=name_font,
-            fill=white
+            fill=(255, 255, 255)
         )
 
         # user name
         draw.text(
-            (130, y),
+            (120, y),
             clean_name,
             font=name_font,
-            fill=white
+            fill=(240, 240, 240)
         )
 
-        bar_x = 350
+        # bar
+        bar_x = 330
         bar_y = y + 8
         full_width = 620
         filled = int((count / max_count) * full_width)
 
-        # background bar
         draw.rounded_rectangle(
             (bar_x, bar_y, bar_x + full_width, bar_y + 28),
             radius=14,
-            fill=dark_bar,
-            outline=(0, 90, 180),
+            fill=(12, 22, 45),
+            outline=accent,
             width=2
         )
 
-        # filled bar
         draw.rounded_rectangle(
             (bar_x, bar_y, bar_x + filled, bar_y + 28),
             radius=14,
-            fill=blue
+            fill=accent
         )
 
-        # value box
+        # count box
         draw.rounded_rectangle(
-            (1020, y - 1, 1135, y + 34),
+            (1030, y - 1, 1145, y + 34),
             radius=12,
-            fill=(8, 35, 70)
+            fill=(10, 25, 50)
         )
+
+        count_x = 1055 if len(str(count)) <= 2 else 1045
 
         draw.text(
-            (1052, y + 2),
+            (count_x, y + 2),
             str(count),
             font=count_font,
-            fill=cyan
+            fill=(255, 255, 255)
         )
 
     file_path = "leaderboard.png"
