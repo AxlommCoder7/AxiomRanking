@@ -111,8 +111,22 @@ async def count_messages(_, message):
         if not message.from_user:
             return
 
-        if message.text and message.text.startswith("/ranking"):
-            return
+        if message.text:
+            cmd = message.text.split()[0].lower()
+
+            if cmd.startswith("/ranking"):
+                print("Ranking command detected inside count handler")
+
+                text = await build_board(
+                    message.chat.id,
+                    "overall"
+                )
+
+                await message.reply_text(
+                    text,
+                    reply_markup=get_buttons("overall")
+                )
+                return
 
         await users.update_one(
             {
@@ -136,27 +150,6 @@ async def count_messages(_, message):
 
     except Exception as e:
         print(f"COUNT ERROR: {e}")
-
-
-@bot.on_message(filters.regex(r"^/ranking(@\w+)?$"))
-async def ranking_cmd(_, message):
-    try:
-        print(f"RANKING COMMAND RECEIVED: {message.text}")
-
-        text = await build_board(
-            message.chat.id,
-            "overall"
-        )
-
-        await message.reply_text(
-            text,
-            reply_markup=get_buttons("overall")
-        )
-
-        print("Ranking sent successfully")
-
-    except Exception as e:
-        print(f"RANK ERROR: {e}")
 
 
 @bot.on_callback_query()
