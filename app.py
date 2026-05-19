@@ -281,17 +281,19 @@ async def build_board(chat_id, mode):
 
     ranking.sort(key=lambda x: x[2], reverse=True)
 
-    text = f"📈 **LEADERBOARD ({mode.upper()})**\n\n"
+    text = f"📈 <b>LEADERBOARD ({mode.upper()})</b>\n\n"
 
     total = 0
     for i, (name, user_id, count) in enumerate(ranking[:10], start=1):
-        clean_name = re.sub(r'[\[\]\(\)_*`]', '', name)
-        mention = f"[{clean_name}](tg://user?id={user_id})"
-    
+        clean_name = re.sub(r"[<>&]", "", name)
+
+        mention = f'<a href="tg://user?id={user_id}">{clean_name}</a>'
+
         text += f"{i}. {mention} ➜ {count}\n"
         total += count
 
-    text += f"\n✉️ **Total Messages: {total}**"
+    text += f"\n✉️ <b>Total Messages: {total}</b>"
+
     return text, ranking
 
 
@@ -363,6 +365,7 @@ async def count_messages(_, message):
                 await message.reply_photo(
                     photo=photo,
                     caption=text,
+                    parse_mode=ParseMode.HTML,
                     reply_markup=get_buttons("overall"),
                     has_spoiler=True
                 )
@@ -416,6 +419,7 @@ async def callback_handler(_, query):
             media=InputMediaPhoto(
                 media=photo,
                 caption=text,
+                parse_mode=ParseMode.HTML,
                 has_spoiler=True
             ),
             reply_markup=get_buttons(mode)
