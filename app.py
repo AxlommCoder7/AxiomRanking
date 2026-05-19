@@ -44,17 +44,17 @@ def get_buttons(active):
     return InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
-                f"⏺️ Overall {'✅' if active=='overall' else ''}",
+                f"⏺️ 𝐎‌ᴠєꝛᴧʟʟ {'✅' if active=='overall' else ''}",
                 callback_data="overall"
             )
         ],
         [
             InlineKeyboardButton(
-                f"⏺️ Today {'✅' if active=='today' else ''}",
+                f"⏺️ 𝐓‌σᴅᴧʏ {'✅' if active=='today' else ''}",
                 callback_data="today"
             ),
             InlineKeyboardButton(
-                f"⏺️ Week {'✅' if active=='week' else ''}",
+                f"⏺️ 𝐖‌єєᴋ {'✅' if active=='week' else ''}",
                 callback_data="week"
             )
         ]
@@ -348,7 +348,7 @@ async def count_messages(_, message):
 
             if cmd.startswith("/ranking"):
                 loading = await message.reply_text(
-                    "⚡ Fetching leaderboard by Axiom Bots..."
+                    "⚡ 𝐅‌єᴛᴄʜɪηɢ ʟєᴧᴅєꝛʙσᴧꝛᴅ ʙʏ 𝐀‌xɪσϻ𝐁‌σᴛ..."
                 )
             
                 text, ranking = await build_board(
@@ -400,13 +400,13 @@ async def count_messages(_, message):
         
         if current > 0 and current % 100 == 0:
             await message.reply_text(
-                f"🎉 Congratulations {message.from_user.mention}!\n\n"
-                f"You completed <b>{current}</b> messages.",
+                f"<b>🎉 𝐂‌σηɢꝛᴧᴛυʟᴧᴛɪσηs</b>  {message.from_user.mention}!\n\n"
+                f"<b>𝐘‌συ ᴄσϻᴘʟєᴛєᴅ</b> {current} <b>ϻєssᴧɢєs.</b>",
                 parse_mode=ParseMode.HTML,
                 reply_markup=InlineKeyboardMarkup([
                     [
                         InlineKeyboardButton(
-                            "🔥 View Ranking",
+                            "🔥 𝐕‌ɪєᴡ 𝐑‌ᴧηᴋɪηɢ",
                             callback_data="overall"
                         )
                     ]
