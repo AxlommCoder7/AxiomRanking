@@ -291,10 +291,11 @@ async def build_board(chat_id, mode):
 
 @bot.on_message(filters.command("test"))
 async def test(_, message):
-    await message.reply_text(
-        'Premium test <tg-emoji emoji-id="6260064483465502441">❤️‍🔥</tg-emoji>'
-    )
-
+    await message.reply_text(p(
+        f'Premium test <tg-emoji emoji-id="6260064483465502441">❤️‍🔥</tg-emoji>'
+    )),
+    parse_mode=PREMIUM_PARSE
+    
 
 @bot.on_message(filters.command("start"))
 async def start_cmd(_, message):
