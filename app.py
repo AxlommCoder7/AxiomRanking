@@ -70,13 +70,12 @@ async def build_board(chat_id, mode):
             )
         )
 
-    ranking.sort(key=lambda x: x[1], reverse=True)
+    ranking.sort(key=lambda x: x[2], reverse=True)
 
     text = f"🏆 **Leaderboard ({mode.upper()})**\n\n"
 
     total = 0
     for i, (name, user_id, count) in enumerate(ranking[:10], start=1):
-        user_id = user.get("user_id")
         mention = f"[{name}](tg://user?id={user_id})"
         
         text += f"{i}. {mention} ➜ {count}\n"
