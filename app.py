@@ -143,10 +143,10 @@ def generate_leaderboard_image(ranking, mode):
     )
 
     draw.text(
-        (1030, 40),
+        (1030, 50),
         mode.upper(),
         font=small_font,
-        fill=accent
+        fill=TEXT_WHITE
     )
 
     # 3D title
