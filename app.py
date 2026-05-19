@@ -281,7 +281,7 @@ async def build_board(chat_id, mode):
 
     ranking.sort(key=lambda x: x[2], reverse=True)
 
-    text = f"<blockquote>📈 <b>LEADERBOARD ({mode.upper()})</b></blockquote>\n\n"
+    text = f"📈 <b>LEADERBOARD ({mode.upper()})</b>\n\n"
 
     total = 0
     for i, (name, user_id, count) in enumerate(ranking[:10], start=1):
@@ -289,10 +289,10 @@ async def build_board(chat_id, mode):
 
         mention = f'<a href="tg://user?id={user_id}">{clean_name}</a>'
 
-        text += f"<blockquote>{i}. {mention} ➜ {count}</blockquote>\n"
+        text += f"<blockquote>{i}. {mention} ➜ {count}\n"
         total += count
 
-    text += f"\n<blockquote>✉️ <b>Total Messages: {total}</b></blockquote>"
+    text += f"\n✉️ <b>Total Messages: {total}</b>"
 
     return text, ranking
 
