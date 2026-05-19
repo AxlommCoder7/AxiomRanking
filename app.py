@@ -36,18 +36,18 @@ def get_buttons(active):
     return InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
+                f"⏺️ Overall {'✅' if active=='overall' else ''}",
+                callback_data="overall"
+            )
+        ],
+        [
+            InlineKeyboardButton(
                 f"⏺️ Today {'✅' if active=='today' else ''}",
                 callback_data="today"
             ),
             InlineKeyboardButton(
                 f"⏺️ Week {'✅' if active=='week' else ''}",
                 callback_data="week"
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                f"⏺️ Overall {'✅' if active=='overall' else ''}",
-                callback_data="overall"
             )
         ]
     ])
