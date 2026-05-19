@@ -75,7 +75,7 @@ async def build_board(chat_id, mode):
 
     ranking.sort(key=lambda x: x[2], reverse=True)
 
-    text = f"📈  **Leaderboard ({mode.upper()})**\n\n"
+    text = f"📈 **LEADERBOARD ({mode.upper()})**\n\n"
 
     total = 0
     for i, (name, user_id, count) in enumerate(ranking[:10], start=1):
