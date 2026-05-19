@@ -135,7 +135,7 @@ def generate_leaderboard_image(ranking, mode):
 
     # top labels
     draw.text(
-        (42, 38),
+        (45, 41),
         "Dev:- Maanav",
         font=small_font,
         fill=accent
