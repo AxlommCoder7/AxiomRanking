@@ -1,7 +1,7 @@
 import re
 import os
 import random
-from datetime import datetime, timedelta
+from datetime import datetime
 from unidecode import unidecode
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
@@ -30,23 +30,6 @@ bot = Client(
 mongo = AsyncIOMotorClient(MONGO_URL)
 db = mongo["ranking_bot"]
 users = db["users"]
-
-word_games = {}
-
-WORD_BANK = [
-    "zealand", "target", "rocket", "shadow", "hunter", "galaxy", "thunder", "diamond", "pirate", "winter",
-    "summer", "falcon", "dragon", "planet", "matrix", "legend", "oxygen", "random", "victory", "leader",
-    "castle", "forest", "orange", "silver", "golden", "danger", "future", "screen", "button", "master",
-    "secret", "battle", "friend", "energy", "gaming", "coffee", "school", "doctor", "travel", "market",
-    "pencil", "camera", "monkey", "rabbit", "tiger", "island", "bridge", "desert", "signal", "system",
-    "memory", "native", "flower", "basket", "window", "mobile", "laptop", "charge", "stream", "chance",
-    "wonder", "speech", "answer", "number", "people", "family", "street", "office", "nature", "puzzle",
-    "winner", "loser", "bright", "strong", "silent", "simple", "smooth", "purple", "yellow", "magnet",
-    "planet", "cosmic", "impact", "storm", "cyber", "venom", "joker", "signal", "strike", "vision",
-    "axiom", "chatfight", "premium", "ranking", "message", "telegram", "trigger", "speed", "typing", "leaderboard",
-]
-
-WORD_GAME_SECONDS = 600
 
 
 def today():
@@ -81,115 +64,6 @@ import random
 import re
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from unidecode import unidecode
-
-
-
-def normalize_answer(text):
-    return re.sub(r"[^a-z0-9]+", "", unidecode(str(text)).lower())
-
-
-def pick_random_word():
-    return random.choice(WORD_BANK).upper()
-
-
-def generate_word_image(word):
-    width, height = 1280, 720
-    img = Image.new("RGB", (width, height), (3, 3, 6))
-    draw = ImageDraw.Draw(img)
-
-    # dark red/black premium background, close to the shared ChatFight style
-    for y in range(height):
-        ratio = y / height
-        r = int(5 + 22 * ratio)
-        g = int(2 + 2 * ratio)
-        b = int(4 + 6 * ratio)
-        draw.line([(0, y), (width, y)], fill=(r, g, b))
-
-    overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
-    odraw = ImageDraw.Draw(overlay)
-    for i in range(22):
-        offset = i * 28
-        odraw.arc(
-            (260 + offset, 260 - offset // 3, 1320 + offset, 940 - offset // 2),
-            190,
-            355,
-            fill=(255, 45, 45, 80),
-            width=3,
-        )
-    for i in range(14):
-        offset = i * 22
-        odraw.arc(
-            (-140 + offset, -80 + offset, 460 + offset, 380 + offset),
-            20,
-            260,
-            fill=(255, 55, 55, 70),
-            width=3,
-        )
-    overlay = overlay.filter(ImageFilter.GaussianBlur(0.4))
-    img.paste(overlay, (0, 0), overlay)
-    draw = ImageDraw.Draw(img)
-
-    try:
-        logo_font = ImageFont.truetype("cfont.ttf", 42)
-        word_font = ImageFont.truetype("cfont.ttf", 92)
-        hint_font = ImageFont.truetype("f.ttf", 24)
-    except Exception:
-        logo_font = ImageFont.load_default()
-        word_font = ImageFont.load_default()
-        hint_font = ImageFont.load_default()
-
-    logo_path = os.getenv("WORD_GAME_LOGO_PATH")
-    if logo_path and os.path.exists(logo_path):
-        try:
-            logo = Image.open(logo_path).convert("RGBA").resize((92, 92))
-            mask = Image.new("L", logo.size, 0)
-            ImageDraw.Draw(mask).ellipse((0, 0, 92, 92), fill=255)
-            img.paste(logo, (62, 48), mask)
-            draw.text((175, 55), "AXIOM", font=logo_font, fill=(255, 255, 255))
-            draw.text((175, 105), "CHATFIGHT BOT", font=hint_font, fill=(230, 230, 230))
-        except Exception:
-            draw.text((70, 55), "AXIOM", font=logo_font, fill=(255, 255, 255))
-            draw.text((70, 105), "CHATFIGHT BOT", font=hint_font, fill=(230, 230, 230))
-    else:
-        draw.text((70, 55), "AXIOM", font=logo_font, fill=(255, 255, 255))
-        draw.text((70, 105), "CHATFIGHT BOT", font=hint_font, fill=(230, 230, 230))
-
-    bbox = draw.textbbox((0, 0), word, font=word_font)
-    text_w = bbox[2] - bbox[0]
-    x = (width - text_w) // 2
-    y = 315
-    for dx, dy, fill in [(5, 6, (40, 0, 0)), (2, 3, (120, 20, 20)), (0, 0, (255, 255, 255))]:
-        draw.text((x + dx, y + dy), word, font=word_font, fill=fill)
-
-    underline_w = min(520, text_w + 60)
-    underline_x = (width - underline_w) // 2
-    for dot_x in range(underline_x, underline_x + underline_w, 18):
-        draw.ellipse((dot_x, y + 110, dot_x + 8, y + 118), fill=(255, 255, 255))
-
-    draw.text((55, 660), "⚡ Be the first to write this word in chat", font=hint_font, fill=(255, 255, 255))
-
-    file_path = f"word_game_{word.lower()}.png"
-    img.save(file_path)
-    return file_path
-
-
-async def start_word_game(message):
-    word = pick_random_word()
-    word_games[message.chat.id] = {
-        "word": word,
-        "expires_at": datetime.utcnow() + timedelta(seconds=WORD_GAME_SECONDS),
-    }
-    photo = generate_word_image(word)
-    await message.reply_photo(
-        photo=photo,
-        caption=(
-            "<b>ChatFight ⚡</b>\n\n"
-            "⚡ Be the first to write the word shown in this photo.\n"
-            f"⏱ <b>Time remaining:</b> {WORD_GAME_SECONDS // 60} minutes\n\n"
-            " हर game me random word aayega."
-        ),
-        parse_mode=ParseMode.HTML,
-    )
 
 
 def generate_leaderboard_image(ranking, mode):
@@ -441,7 +315,6 @@ async def start_cmd(_, message):
 
 <b> <tg-emoji emoji-id="6260304872785059395">🔵</tg-emoji> 𝐂‌σϻϻᴧηᴅs:</b>
 • /ranking <b>- sʜσᴡ ʟєᴧᴅєꝛʙσᴧꝛᴅ <tg-emoji emoji-id="6260273356315040975">💀</tg-emoji> </b>
-• /wordfight <b>- random word mini-game start karo ⚡</b>
 """     
         ),
         parse_mode=PREMIUM_PARSE,
@@ -473,10 +346,6 @@ async def count_messages(_, message):
         if message.text:
             cmd = message.text.split()[0].lower()
 
-            if cmd.startswith("/wordfight") or cmd.startswith("/word"):
-                await start_word_game(message)
-                return
-
             if cmd.startswith("/ranking"):
                 loading = await message.reply_text(
                     "⚡ 𝐅‌єᴛᴄʜɪηɢ ʟєᴧᴅєꝛʙσᴧꝛᴅ ʙʏ 𝐀‌xɪσϻ𝐁‌σᴛ..."
@@ -500,29 +369,6 @@ async def count_messages(_, message):
                     parse_mode=ParseMode.HTML,
                     reply_markup=get_buttons("overall"),
                     has_spoiler=True
-                )
-                return
-
-        game = word_games.get(message.chat.id)
-        if game and message.text:
-            if datetime.utcnow() > game["expires_at"]:
-                word_games.pop(message.chat.id, None)
-                await message.reply_text("❌ <b>Time's up!</b> /wordfight se naya random word start karo.", parse_mode=ParseMode.HTML)
-            elif normalize_answer(message.text) == normalize_answer(game["word"]):
-                word_games.pop(message.chat.id, None)
-                await users.update_one(
-                    {"chat_id": message.chat.id, "user_id": message.from_user.id},
-                    {
-                        "$inc": {"overall": 5, f"daily.{today()}": 5, f"weekly.{week()}": 5},
-                        "$set": {"name": message.from_user.first_name},
-                    },
-                    upsert=True,
-                )
-                await message.reply_text(
-                    f"💪 <b>Time goal!</b> {message.from_user.mention}\n"
-                    "You guessed the word!\n"
-                    "+5 points added to leaderboard.",
-                    parse_mode=ParseMode.HTML,
                 )
                 return
 
