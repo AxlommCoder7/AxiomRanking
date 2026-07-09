@@ -8,6 +8,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMedi
 from motor.motor_asyncio import AsyncIOMotorClient
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from premium import p, PREMIUM_PARSE
+from wordfight import WORD_GAME_REWARD, check_answer, start_game
 from pyrogram import Client, filters
 from pyrogram.enums import ParseMode
 
@@ -315,6 +316,7 @@ async def start_cmd(_, message):
 
 <b> <tg-emoji emoji-id="6260304872785059395">🔵</tg-emoji> 𝐂‌σϻϻᴧηᴅs:</b>
 • /ranking <b>- sʜσᴡ ʟєᴧᴅєꝛʙσᴧꝛᴅ <tg-emoji emoji-id="6260273356315040975">💀</tg-emoji> </b>
+• /wordfight <b>- random word game start karo ⚡</b>
 """     
         ),
         parse_mode=PREMIUM_PARSE,
@@ -346,6 +348,15 @@ async def count_messages(_, message):
         if message.text:
             cmd = message.text.split()[0].lower()
 
+            if cmd.startswith("/wordfight") or cmd.startswith("/word"):
+                game = start_game(message.chat.id)
+                await message.reply_photo(
+                    photo=game["photo"],
+                    caption=game["caption"],
+                    parse_mode=ParseMode.HTML
+                )
+                return
+
             if cmd.startswith("/ranking"):
                 loading = await message.reply_text(
                     "⚡ 𝐅‌єᴛᴄʜɪηɢ ʟєᴧᴅєꝛʙσᴧꝛᴅ ʙʏ 𝐀‌xɪσϻ𝐁‌σᴛ..."
@@ -369,6 +380,41 @@ async def count_messages(_, message):
                     parse_mode=ParseMode.HTML,
                     reply_markup=get_buttons("overall"),
                     has_spoiler=True
+                )
+                return
+
+        if message.text:
+            word_result = check_answer(message.chat.id, message.text)
+
+            if word_result["status"] == "expired":
+                await message.reply_text(
+                    "❌ <b>Time's up!</b> /wordfight se naya random word start karo.",
+                    parse_mode=ParseMode.HTML
+                )
+
+            elif word_result["status"] == "correct":
+                await users.update_one(
+                    {
+                        "chat_id": message.chat.id,
+                        "user_id": message.from_user.id
+                    },
+                    {
+                        "$inc": {
+                            "overall": WORD_GAME_REWARD,
+                            f"daily.{today()}": WORD_GAME_REWARD,
+                            f"weekly.{week()}": WORD_GAME_REWARD
+                        },
+                        "$set": {
+                            "name": message.from_user.first_name
+                        }
+                    },
+                    upsert=True
+                )
+                await message.reply_text(
+                    f"💪 <b>Time goal!</b> {message.from_user.mention}\n"
+                    "You guessed the word!\n"
+                    f"+{WORD_GAME_REWARD} points added to leaderboard.",
+                    parse_mode=ParseMode.HTML
                 )
                 return
 
