@@ -20,12 +20,16 @@ API_HASH = os.getenv("API_HASH")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 MONGO_URL = os.getenv("MONGO_URL")
 
+SESSION_NAME = f"ranking_bot_{os.getpid()}"
+
 bot = Client(
-    "ranking_bot",
+    SESSION_NAME,
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN,
-    parse_mode=ParseMode.HTML
+    parse_mode=ParseMode.HTML,
+    in_memory=True,
+    workdir="/tmp"
 )
 
 mongo = AsyncIOMotorClient(MONGO_URL)
