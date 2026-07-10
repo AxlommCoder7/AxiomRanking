@@ -231,11 +231,11 @@ def generate_word_image(word: str, output_dir: str = ".", logo_path: str | None 
     logo_font = _load_font("cfont.ttf", 42)
     word_font = _load_font("cfont.ttf", 92)
 
-        draw.text((175, 55), "Axiom—chatfight", font=logo_font, fill=(255, 255, 255))
-        draw.text((175, 105), "© @AxiomBots ", font=hint_font, fill=(230, 230, 230))
-    except Exception:
-        draw.text((70, 55), "Axiom—chatfight", font=logo_font, fill=(255, 255, 255))
-        draw.text((70, 105), "© @AxiomBots", font=hint_font, fill=(230, 230, 230))
+    draw.text((175, 55), "Axiom—chatfight", font=logo_font, fill=(255, 255, 255))
+    draw.text((175, 105), "© @AxiomBots ", font=hint_font, fill=(230, 230, 230))
+except Exception:
+    draw.text((70, 55), "Axiom—chatfight", font=logo_font, fill=(255, 255, 255))
+    draw.text((70, 105), "© @AxiomBots", font=hint_font, fill=(230, 230, 230))
 
 
 def generate_word_image(word: str, output_dir: str = ".", logo_path: str | None = None) -> str:
