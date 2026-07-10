@@ -453,6 +453,7 @@ async def start_cmd(_, message):
 <b> <tg-emoji emoji-id="6260304872785059395">🔵</tg-emoji> 𝐂‌σϻϻᴧηᴅs:</b>
 • /ranking <b>- sʜσᴡ ʟєᴧᴅєꝛʙσᴧꝛᴅ <tg-emoji emoji-id="6260273356315040975">💀</tg-emoji> </b>
 • /chatconfig <b>- auto word game settings panel ⚙️</b>
+• /wordfight <b>- random word game start karo ⚡</b>
 """     
         ),
         parse_mode=PREMIUM_PARSE,
@@ -516,6 +517,13 @@ async def count_messages(_, message):
             if cmd.startswith("/wordfight") or cmd.startswith("/word"):
                 await message.reply_text(
                     "⚙️ Ab word game automatic hai. Settings ke liye use karo: <code>/chatconfig</code>",
+
+            if cmd.startswith("/wordfight") or cmd.startswith("/word"):
+                game = start_game(message.chat.id)
+                await message.reply_photo(
+                    photo=game["photo"],
+                    caption=game["caption"],
+
                     parse_mode=ParseMode.HTML
                 )
                 return
@@ -551,7 +559,11 @@ async def count_messages(_, message):
 
             if word_result["status"] == "expired":
                 await message.reply_text(
+
                     "❌ <b>Time's up!</b> Next random word auto timer ke hisaab se aayega.",
+
+                    "❌ <b>Time's up!</b> /wordfight se naya random word start karo.",
+
                     parse_mode=ParseMode.HTML
                 )
 
