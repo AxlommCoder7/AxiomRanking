@@ -1,13 +1,15 @@
 import re
 import os
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 from unidecode import unidecode
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
 from motor.motor_asyncio import AsyncIOMotorClient
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from premium import p, PREMIUM_PARSE
+from wordfight import WORD_GAME_REWARD, check_answer, start_game
 from pyrogram import Client, filters
 from pyrogram.enums import ParseMode
 
@@ -19,17 +21,24 @@ API_HASH = os.getenv("API_HASH")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 MONGO_URL = os.getenv("MONGO_URL")
 
+SESSION_NAME = f"ranking_bot_{os.getpid()}"
+
 bot = Client(
-    "ranking_bot",
+    SESSION_NAME,
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN,
-    parse_mode=ParseMode.HTML
+    parse_mode=ParseMode.HTML,
+    in_memory=True,
+    workdir="/tmp"
 )
 
 mongo = AsyncIOMotorClient(MONGO_URL)
 db = mongo["ranking_bot"]
 users = db["users"]
+word_settings = db["word_settings"]
+scheduler = AsyncIOScheduler()
+custom_wordtime_inputs = {}
 
 
 def today():
@@ -38,6 +47,134 @@ def today():
 
 def week():
     return datetime.utcnow().strftime("%Y-%W")
+
+
+def parse_duration(value):
+    text = str(value).strip().lower().replace(" ", "")
+    if not text:
+        return None
+
+    units = {
+        "s": 1,
+        "sec": 1,
+        "secs": 1,
+        "second": 1,
+        "seconds": 1,
+        "m": 60,
+        "min": 60,
+        "mins": 60,
+        "minute": 60,
+        "minutes": 60,
+        "h": 3600,
+        "hr": 3600,
+        "hour": 3600,
+        "hours": 3600,
+        "d": 86400,
+        "day": 86400,
+        "days": 86400,
+    }
+
+    match = re.fullmatch(r"(\d+)([a-z]+)", text)
+    if not match:
+        return None
+
+    amount = int(match.group(1))
+    unit = match.group(2)
+    seconds = amount * units.get(unit, 0)
+
+    if seconds < 10 or seconds > 86400 * 30:
+        return None
+
+    return seconds
+
+
+def format_duration(seconds):
+    if seconds < 60:
+        return f"{seconds} second{'s' if seconds != 1 else ''}"
+    if seconds % 86400 == 0:
+        value = seconds // 86400
+        return f"{value} day{'s' if value != 1 else ''}"
+    if seconds % 3600 == 0:
+        value = seconds // 3600
+        return f"{value} hour{'s' if value != 1 else ''}"
+    value = seconds // 60
+    return f"{value} minute{'s' if value != 1 else ''}"
+
+
+def get_chat_config_buttons():
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("⏱ 10 sec", callback_data="wordtime:10"),
+            InlineKeyboardButton("⏱ 1 min", callback_data="wordtime:60"),
+        ],
+        [
+            InlineKeyboardButton("⏱ 10 min", callback_data="wordtime:600"),
+            InlineKeyboardButton("⏱ 1 hour", callback_data="wordtime:3600"),
+        ],
+        [
+            InlineKeyboardButton("⏱ 1 day", callback_data="wordtime:86400"),
+            InlineKeyboardButton("✍️ Custom", callback_data="wordtime:custom"),
+        ],
+        [
+            InlineKeyboardButton("❌ Off", callback_data="wordtime:off"),
+        ]
+    ])
+
+
+async def set_wordtime(chat_id, interval_seconds=None):
+    now = datetime.utcnow()
+
+    if interval_seconds is None:
+        await word_settings.update_one(
+            {"chat_id": chat_id},
+            {"$set": {"enabled": False, "updated_at": now}},
+            upsert=True
+        )
+        return "✅ Auto word game band kar diya."
+
+    await word_settings.update_one(
+        {"chat_id": chat_id},
+        {
+            "$set": {
+                "enabled": True,
+                "interval_seconds": interval_seconds,
+                "next_run": now + timedelta(seconds=interval_seconds),
+                "updated_at": now
+            }
+        },
+        upsert=True
+    )
+    return f"✅ Auto word game set ho gaya. Ab har {format_duration(interval_seconds)} me random word aayega."
+
+
+async def send_auto_wordfight(chat_id):
+    game = start_game(chat_id)
+    await bot.send_photo(
+        chat_id=chat_id,
+        photo=game["photo"],
+        caption=game["caption"],
+        parse_mode=ParseMode.HTML
+    )
+
+
+async def run_wordfight_scheduler():
+    now = datetime.utcnow()
+
+    async for setting in word_settings.find({"enabled": True, "next_run": {"$lte": now}}):
+        chat_id = setting["chat_id"]
+        interval_seconds = setting.get("interval_seconds", 3600)
+        next_run = now + timedelta(seconds=interval_seconds)
+
+        try:
+            await send_auto_wordfight(chat_id)
+        except Exception as e:
+            print(f"AUTO WORDFIGHT ERROR ({chat_id}): {e}")
+
+        await word_settings.update_one(
+            {"chat_id": chat_id},
+            {"$set": {"next_run": next_run, "updated_at": now}},
+            upsert=True
+        )
 
 
 def get_buttons(active):
@@ -315,6 +452,7 @@ async def start_cmd(_, message):
 
 <b> <tg-emoji emoji-id="6260304872785059395">🔵</tg-emoji> 𝐂‌σϻϻᴧηᴅs:</b>
 • /ranking <b>- sʜσᴡ ʟєᴧᴅєꝛʙσᴧꝛᴅ <tg-emoji emoji-id="6260273356315040975">💀</tg-emoji> </b>
+• /chatconfig <b>- auto word game settings panel ⚙️</b>
 """     
         ),
         parse_mode=PREMIUM_PARSE,
@@ -346,6 +484,42 @@ async def count_messages(_, message):
         if message.text:
             cmd = message.text.split()[0].lower()
 
+            custom_key = (message.chat.id, message.from_user.id)
+            custom_expires_at = custom_wordtime_inputs.get(custom_key)
+            if custom_expires_at and datetime.utcnow() > custom_expires_at:
+                custom_wordtime_inputs.pop(custom_key, None)
+                custom_expires_at = None
+
+            if custom_expires_at:
+                interval_seconds = parse_duration(message.text)
+
+                if not interval_seconds:
+                    await message.reply_text(
+                        "❌ Galat time. Aise likho: <code>10 s</code>, <code>10 m</code>, <code>10 h</code>, <code>1 d</code>",
+                        parse_mode=ParseMode.HTML
+                    )
+                    return
+
+                custom_wordtime_inputs.pop(custom_key, None)
+                text = await set_wordtime(message.chat.id, interval_seconds)
+                await message.reply_text(text)
+                return
+
+            if cmd.startswith("/chatconfig"):
+                await message.reply_text(
+                    "⚙️ <b>Chat Config</b>\n\nAuto random word game ka timer select karo:",
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=get_chat_config_buttons()
+                )
+                return
+
+            if cmd.startswith("/wordfight") or cmd.startswith("/word"):
+                await message.reply_text(
+                    "⚙️ Ab word game automatic hai. Settings ke liye use karo: <code>/chatconfig</code>",
+                    parse_mode=ParseMode.HTML
+                )
+                return
+
             if cmd.startswith("/ranking"):
                 loading = await message.reply_text(
                     "⚡ 𝐅‌єᴛᴄʜɪηɢ ʟєᴧᴅєꝛʙσᴧꝛᴅ ʙʏ 𝐀‌xɪσϻ𝐁‌σᴛ..."
@@ -369,6 +543,41 @@ async def count_messages(_, message):
                     parse_mode=ParseMode.HTML,
                     reply_markup=get_buttons("overall"),
                     has_spoiler=True
+                )
+                return
+
+        if message.text:
+            word_result = check_answer(message.chat.id, message.text)
+
+            if word_result["status"] == "expired":
+                await message.reply_text(
+                    "❌ <b>Time's up!</b> Next random word auto timer ke hisaab se aayega.",
+                    parse_mode=ParseMode.HTML
+                )
+
+            elif word_result["status"] == "correct":
+                await users.update_one(
+                    {
+                        "chat_id": message.chat.id,
+                        "user_id": message.from_user.id
+                    },
+                    {
+                        "$inc": {
+                            "overall": WORD_GAME_REWARD,
+                            f"daily.{today()}": WORD_GAME_REWARD,
+                            f"weekly.{week()}": WORD_GAME_REWARD
+                        },
+                        "$set": {
+                            "name": message.from_user.first_name
+                        }
+                    },
+                    upsert=True
+                )
+                await message.reply_text(
+                    f"💪 <b>Time goal!</b> {message.from_user.mention}\n"
+                    "You guessed the word!\n"
+                    f"+{WORD_GAME_REWARD} points added to leaderboard.",
+                    parse_mode=ParseMode.HTML
                 )
                 return
 
@@ -422,7 +631,38 @@ async def count_messages(_, message):
 @bot.on_callback_query()
 async def callback_handler(_, query):
     try:
-        mode = query.data
+        data = query.data
+
+        if data.startswith("wordtime:"):
+            value = data.split(":", 1)[1]
+
+            if value == "custom":
+                custom_wordtime_inputs[(query.message.chat.id, query.from_user.id)] = datetime.utcnow() + timedelta(minutes=2)
+                await query.answer("Custom time bhejo")
+                await query.message.reply_text(
+                    "✍️ Custom time bhejo. Example:\n"
+                    "<code>10 s</code>\n"
+                    "<code>10 m</code>\n"
+                    "<code>10 h</code>\n"
+                    "<code>1 d</code>",
+                    parse_mode=ParseMode.HTML
+                )
+                return
+
+            if value == "off":
+                text = await set_wordtime(query.message.chat.id, None)
+            else:
+                text = await set_wordtime(query.message.chat.id, int(value))
+
+            await query.answer("Saved")
+            await query.message.edit_text(
+                text,
+                parse_mode=ParseMode.HTML,
+                reply_markup=get_chat_config_buttons()
+            )
+            return
+
+        mode = data
 
         await query.answer("Updating Leaderboard By AxiomBot...")
 
@@ -453,5 +693,7 @@ async def callback_handler(_, query):
 
 
 if __name__ == "__main__":
+    scheduler.add_job(run_wordfight_scheduler, "interval", seconds=5, max_instances=1)
+    scheduler.start()
     print("Bot running...")
     bot.run()
