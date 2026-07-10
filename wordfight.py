@@ -28,7 +28,8 @@ WORD_BANK = [
     "wonder", "speech", "answer", "number", "people", "family", "street", "office", "nature", "puzzle",
     "winner", "loser", "bright", "strong", "silent", "simple", "smooth", "purple", "yellow", "magnet",
     "cosmic", "impact", "storm", "cyber", "venom", "joker", "strike", "vision", "typing", "trigger",
-    "axiom", "chatfight", "premium", "ranking", "message", "telegram", "leaderboard", "speed", "power", "black",
+    "axiom", "chatfight", "premium", "ranking", "message", "telegram", "leaderboard", "speed", "power", 
+    "black", "Axiom", "OwnerAxiom", "Maanav", "AxiomBots"
 ]
 
 
@@ -88,8 +89,8 @@ def generate_word_image(word: str, output_dir: str = ".", logo_path: str | None 
     img.paste(overlay.filter(ImageFilter.GaussianBlur(0.4)), (0, 0), overlay)
     draw = ImageDraw.Draw(img)
 
-    logo_font = _load_font("cfont.ttf", 42)
-    word_font = _load_font("cfont.ttf", 92)
+    logo_font = _load_font("f.ttf", 42)
+    word_font = _load_font("f.ttf", 92)
     hint_font = _load_font("f.ttf", 24)
 
     _paste_custom_logo(img, draw, logo_path or os.getenv("WORD_GAME_LOGO_PATH"), logo_font, hint_font)
@@ -130,7 +131,6 @@ def start_game(chat_id: int, output_dir: str = ".", logo_path: str | None = None
             "<b>ChatFight ⚡</b>\n\n"
             "⚡ Be the first to write the word shown in this photo.\n"
             f"⏱ <b>Time remaining:</b> {WORD_GAME_SECONDS // 60} minutes\n\n"
-            "Har game me random word aayega."
         ),
         "expires_at": WORD_GAMES[chat_id]["expires_at"],
     }
