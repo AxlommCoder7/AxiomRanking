@@ -29,9 +29,10 @@ WORD_BANK = [
     "wonder", "speech", "answer", "number", "people", "family", "street", "office", "nature", "puzzle",
     "winner", "loser", "bright", "strong", "silent", "simple", "smooth", "purple", "yellow", "magnet",
     "cosmic", "impact", "storm", "cyber", "venom", "joker", "strike", "vision", "typing", "trigger",
-    "axiom", "chatfight", "premium", "ranking", "message", "telegram", "leaderboard", "speed", "power", "black",
-]
+    "axiom", "chatfight", "premium", "ranking", "message", "telegram", "leaderboard", "speed", "power", 
+    "black", "Axiom", "OwnerAxiom", "Maanav", "AxiomBots"
 
+]
 
 def normalize_answer(text: str) -> str:
     """Normalize a chat answer so symbols/case do not block a correct guess."""
@@ -52,8 +53,12 @@ def _load_font(font_path: str, size: int):
 
 def _paste_custom_logo(img: Image.Image, draw: ImageDraw.ImageDraw, logo_path: str | None, logo_font, hint_font) -> None:
     if not logo_path or not os.path.exists(logo_path):
-        draw.text((70, 55), "AXIOM", font=logo_font, fill=(255, 255, 255))
-        draw.text((70, 105), "CHATFIGHT BOT", font=hint_font, fill=(230, 230, 230))
+        draw.text((70, 55), "Axiom—chatfight", font=logo_font, fill=(255, 255, 255))
+        draw.text((70, 105), "© @AxiomBots", font=hint_font, fill=(230, 230, 230))
+
+        draw.text((70, 55), "Axiom—chatfight", font=logo_font, fill=(255, 255, 255))
+        draw.text((70, 105), "© @AxiomBots", font=hint_font, fill=(230, 230, 230))
+
         return
 
     try:
@@ -61,11 +66,13 @@ def _paste_custom_logo(img: Image.Image, draw: ImageDraw.ImageDraw, logo_path: s
         mask = Image.new("L", logo.size, 0)
         ImageDraw.Draw(mask).ellipse((0, 0, 92, 92), fill=255)
         img.paste(logo, (62, 48), mask)
-        draw.text((175, 55), "AXIOM", font=logo_font, fill=(255, 255, 255))
-        draw.text((175, 105), "CHATFIGHT BOT", font=hint_font, fill=(230, 230, 230))
+
+        draw.text((70, 55), "Axiom—chatfight", font=logo_font, fill=(255, 255, 255))
+        draw.text((70, 105), "© @AxiomBots", font=hint_font, fill=(230, 230, 230))
     except Exception:
-        draw.text((70, 55), "AXIOM", font=logo_font, fill=(255, 255, 255))
-        draw.text((70, 105), "CHATFIGHT BOT", font=hint_font, fill=(230, 230, 230))
+        draw.text((70, 55), "Axiom—chatfight", font=logo_font, fill=(255, 255, 255))
+        draw.text((70, 105), "© @AxiomBots", font=hint_font, fill=(230, 230, 230))
+
 
 
 
@@ -220,6 +227,36 @@ def generate_word_image(word: str, output_dir: str = ".", logo_path: str | None 
 
     logo_font = _load_font("cfont.ttf", 42)
     word_font = _load_font("cfont.ttf", 92)
+
+    draw.text((175, 55), "Axiom—chatfight", font=logo_font, fill=(255, 255, 255))
+    draw.text((175, 105), "© @AxiomBots ", font=hint_font, fill=(230, 230, 230))
+
+
+def generate_word_image(word: str, output_dir: str = ".", logo_path: str | None = None) -> str:
+    """Generate the black ChatFight-style challenge image and return its path."""
+    width, height = 1280, 720
+    img = Image.new("RGB", (width, height), (3, 3, 6))
+    draw = ImageDraw.Draw(img)
+
+    for y in range(height):
+        ratio = y / height
+        draw.line([(0, y), (width, y)], fill=(int(5 + 22 * ratio), int(2 + 2 * ratio), int(4 + 6 * ratio)))
+
+    overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    odraw = ImageDraw.Draw(overlay)
+    for i in range(22):
+        offset = i * 28
+        odraw.arc((260 + offset, 260 - offset // 3, 1320 + offset, 940 - offset // 2), 190, 355, fill=(255, 45, 45, 80), width=3)
+    for i in range(14):
+        offset = i * 22
+        odraw.arc((-140 + offset, -80 + offset, 460 + offset, 380 + offset), 20, 260, fill=(255, 55, 55, 70), width=3)
+    img.paste(overlay.filter(ImageFilter.GaussianBlur(0.4)), (0, 0), overlay)
+    draw = ImageDraw.Draw(img)
+
+    logo_font = _load_font("f.ttf", 42)
+    word_font = _load_font("f.ttf", 92)
+
+
     hint_font = _load_font("f.ttf", 24)
 
     _paste_custom_logo(img, draw, logo_path or os.getenv("WORD_GAME_LOGO_PATH"), logo_font, hint_font)
@@ -241,6 +278,7 @@ def generate_word_image(word: str, output_dir: str = ".", logo_path: str | None 
 
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     file_path = Path(output_dir) / f"word_game_{normalize_answer(word)}_{uuid4().hex[:8]}.png"
+
     img.save(file_path)
     return str(file_path)
 
@@ -257,10 +295,9 @@ def start_game(chat_id: int, output_dir: str = ".", logo_path: str | None = None
         "word": word,
         "photo": photo,
         "caption": (
-            "<b>ChatFight ⚡</b>\n\n"
+            "<b>Axiom—chatfight ⚡</b>\n\n"
             "⚡ Be the first to write the word shown in this photo.\n"
             f"⏱ <b>Time remaining:</b> {WORD_GAME_SECONDS // 60} minutes\n\n"
-            "Har game me random word aayega."
         ),
         "expires_at": WORD_GAMES[chat_id]["expires_at"],
     }
