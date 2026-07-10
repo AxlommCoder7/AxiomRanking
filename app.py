@@ -517,6 +517,7 @@ async def count_messages(_, message):
             if cmd.startswith("/wordfight") or cmd.startswith("/word"):
                 await message.reply_text(
                     "⚙️ Ab word game automatic hai. Settings ke liye use karo: <code>/chatconfig</code>",
+                )
 
             if cmd.startswith("/wordfight") or cmd.startswith("/word"):
                 game = start_game(message.chat.id)
