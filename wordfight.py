@@ -9,6 +9,7 @@ import os
 import random
 import re
 from datetime import datetime, timedelta
+from uuid import uuid4
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
@@ -28,14 +29,10 @@ WORD_BANK = [
     "wonder", "speech", "answer", "number", "people", "family", "street", "office", "nature", "puzzle",
     "winner", "loser", "bright", "strong", "silent", "simple", "smooth", "purple", "yellow", "magnet",
     "cosmic", "impact", "storm", "cyber", "venom", "joker", "strike", "vision", "typing", "trigger",
-
-    "axiom", "chatfight", "premium", "ranking", "message", "telegram", "leaderboard", "speed", "power", "black",
-
     "axiom", "chatfight", "premium", "ranking", "message", "telegram", "leaderboard", "speed", "power", 
     "black", "Axiom", "OwnerAxiom", "Maanav", "AxiomBots"
 
 ]
-
 
 def normalize_answer(text: str) -> str:
     """Normalize a chat answer so symbols/case do not block a correct guess."""
@@ -56,7 +53,6 @@ def _load_font(font_path: str, size: int):
 
 def _paste_custom_logo(img: Image.Image, draw: ImageDraw.ImageDraw, logo_path: str | None, logo_font, hint_font) -> None:
     if not logo_path or not os.path.exists(logo_path):
-
         draw.text((70, 55), "Axiom—chatfight", font=logo_font, fill=(255, 255, 255))
         draw.text((70, 105), "© @AxiomBots", font=hint_font, fill=(230, 230, 230))
 
@@ -76,6 +72,7 @@ def _paste_custom_logo(img: Image.Image, draw: ImageDraw.ImageDraw, logo_path: s
     except Exception:
         draw.text((70, 55), "Axiom—chatfight", font=logo_font, fill=(255, 255, 255))
         draw.text((70, 105), "© @AxiomBots", font=hint_font, fill=(230, 230, 230))
+
 
 
 
@@ -259,6 +256,7 @@ def generate_word_image(word: str, output_dir: str = ".", logo_path: str | None 
     logo_font = _load_font("f.ttf", 42)
     word_font = _load_font("f.ttf", 92)
 
+
     hint_font = _load_font("f.ttf", 24)
 
     _paste_custom_logo(img, draw, logo_path or os.getenv("WORD_GAME_LOGO_PATH"), logo_font, hint_font)
@@ -279,7 +277,8 @@ def generate_word_image(word: str, output_dir: str = ".", logo_path: str | None 
     draw.text((55, 660), "Be the first to write this word in chat", font=hint_font, fill=(255, 255, 255))
 
     Path(output_dir).mkdir(parents=True, exist_ok=True)
-    file_path = Path(output_dir) / f"word_game_{normalize_answer(word)}.png"
+    file_path = Path(output_dir) / f"word_game_{normalize_answer(word)}_{uuid4().hex[:8]}.png"
+
     img.save(file_path)
     return str(file_path)
 
@@ -296,11 +295,9 @@ def start_game(chat_id: int, output_dir: str = ".", logo_path: str | None = None
         "word": word,
         "photo": photo,
         "caption": (
-
-            "<b>ChatFight ⚡</b>\n\n"
+            "<b>Axiom—chatfight ⚡</b>\n\n"
             "⚡ Be the first to write the word shown in this photo.\n"
             f"⏱ <b>Time remaining:</b> {WORD_GAME_SECONDS // 60} minutes\n\n"
-
         ),
         "expires_at": WORD_GAMES[chat_id]["expires_at"],
     }

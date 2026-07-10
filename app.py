@@ -1,7 +1,14 @@
 import re
 import os
 import random
+import asyncio
+import logging
+import html
 from datetime import datetime, timedelta
+from pathlib import Path
+
+from datetime import datetime, timedelta
+
 from unidecode import unidecode
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
@@ -14,12 +21,23 @@ from pyrogram import Client, filters
 from pyrogram.enums import ParseMode
 
 
+LOG_FILE = "bot.log"
+logging.basicConfig(
+    filename=LOG_FILE,
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
 print("Starting bot...")
+logging.info("Starting bot...")
 
 API_ID = int(os.getenv("API_ID"))
 API_HASH = os.getenv("API_HASH")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 MONGO_URL = os.getenv("MONGO_URL")
+OWNER_ID = int(os.getenv("OWNER_ID", "0") or 0)
+
+SESSION_NAME = f"ranking_bot_{os.getpid()}"
 
 SESSION_NAME = f"ranking_bot_{os.getpid()}"
 
@@ -177,6 +195,38 @@ async def run_wordfight_scheduler():
         )
 
 
+async def is_authorized_config_user(message):
+    if OWNER_ID and message.from_user.id == OWNER_ID:
+        return True
+
+    try:
+        member = await bot.get_chat_member(message.chat.id, message.from_user.id)
+        status = str(member.status).lower()
+        return "administrator" in status or "creator" in status or "owner" in status
+    except Exception as e:
+        logging.exception("AUTH CHECK ERROR: %s", e)
+        return False
+
+
+async def run_git_pull():
+    process = await asyncio.create_subprocess_exec(
+        "git",
+        "pull",
+        "--ff-only",
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT,
+    )
+    stdout, _ = await process.communicate()
+    output = stdout.decode(errors="replace").strip()
+    return process.returncode, output or "No output"
+
+
+def trim_output(text, limit=3500):
+    if len(text) <= limit:
+        return text
+    return text[-limit:]
+
+
 def get_buttons(active):
     return InlineKeyboardMarkup([
         [
@@ -198,6 +248,9 @@ def get_buttons(active):
     ])
 
 import random
+import asyncio
+import logging
+import html
 import re
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from unidecode import unidecode
@@ -454,6 +507,10 @@ async def start_cmd(_, message):
 • /ranking <b>- sʜσᴡ ʟєᴧᴅєꝛʙσᴧꝛᴅ <tg-emoji emoji-id="6260273356315040975">💀</tg-emoji> </b>
 • /chatconfig <b>- auto word game settings panel ⚙️</b>
 
+• /logs <b>- bot logs file</b>
+• /gitpull <b>- server pe git pull</b>
+
+
 • /wordfight <b>- random word game start karo ⚡</b>
 
 """     
@@ -487,6 +544,38 @@ async def count_messages(_, message):
         if message.text:
             cmd = message.text.split()[0].lower()
 
+            if cmd.startswith("/logs"):
+                if not await is_authorized_config_user(message):
+                    await message.reply_text("❌ Sirf owner/admin logs dekh sakta hai.")
+                    return
+
+                logging.info("/logs requested by %s in %s", message.from_user.id, message.chat.id)
+                log_path = Path(LOG_FILE)
+                if not log_path.exists():
+                    log_path.write_text("No logs yet.\n")
+
+                await message.reply_document(
+                    document=str(log_path),
+                    caption="📄 Bot logs"
+                )
+                return
+
+            if cmd.startswith("/gitpull"):
+                if not await is_authorized_config_user(message):
+                    await message.reply_text("❌ Sirf owner/admin git pull chala sakta hai.")
+                    return
+
+                loading = await message.reply_text("🔄 Git pull chal raha hai...")
+                code, output = await run_git_pull()
+                logging.info("/gitpull by %s in %s returned %s: %s", message.from_user.id, message.chat.id, code, output)
+                status = "✅" if code == 0 else "❌"
+                await loading.edit_text(
+                    f"{status} <b>git pull --ff-only</b> finished with code <code>{code}</code>\n\n"
+                    f"<pre>{html.escape(trim_output(output))}</pre>",
+                    parse_mode=ParseMode.HTML
+                )
+                return
+
             custom_key = (message.chat.id, message.from_user.id)
             custom_expires_at = custom_wordtime_inputs.get(custom_key)
             if custom_expires_at and datetime.utcnow() > custom_expires_at:
@@ -519,6 +608,7 @@ async def count_messages(_, message):
             if cmd.startswith("/wordfight") or cmd.startswith("/word"):
                 await message.reply_text(
                     "⚙️ Ab word game automatic hai. Settings ke liye use karo: <code>/chatconfig</code>",
+
 
                 )
 
@@ -565,6 +655,7 @@ async def count_messages(_, message):
             if word_result["status"] == "expired":
                 await message.reply_text(
                     "❌ <b>Time's up!</b> /wordfight se naya random word start karo.",
+
 
                     parse_mode=ParseMode.HTML
                 )
@@ -638,10 +729,10 @@ async def count_messages(_, message):
         print(f"Count updated: {message.from_user.first_name}")
 
     except Exception as e:
+        logging.exception("COUNT ERROR: %s", e)
         print(f"COUNT ERROR: {e}")
 
 
-@bot.on_callback_query()
 @bot.on_callback_query()
 async def callback_handler(_, query):
     try:
@@ -703,6 +794,7 @@ async def callback_handler(_, query):
         )
 
     except Exception as e:
+        logging.exception("CALLBACK ERROR: %s", e)
         print(f"CALLBACK ERROR: {e}")
 
 
@@ -710,4 +802,5 @@ if __name__ == "__main__":
     scheduler.add_job(run_wordfight_scheduler, "interval", seconds=5, max_instances=1)
     scheduler.start()
     print("Bot running...")
+    logging.info("Bot running...")
     bot.run()
