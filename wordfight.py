@@ -52,8 +52,8 @@ def _load_font(font_path: str, size: int):
 
 def _paste_custom_logo(img: Image.Image, draw: ImageDraw.ImageDraw, logo_path: str | None, logo_font, hint_font) -> None:
     if not logo_path or not os.path.exists(logo_path):
-        draw.text((70, 55), "AXIOM", font=logo_font, fill=(255, 255, 255))
-        draw.text((70, 105), "CHATFIGHT BOT", font=hint_font, fill=(230, 230, 230))
+        draw.text((70, 55), "Axiom—chatfight", font=logo_font, fill=(255, 255, 255))
+        draw.text((70, 105), "© @AxiomBots", font=hint_font, fill=(230, 230, 230))
         return
 
     try:
@@ -62,10 +62,10 @@ def _paste_custom_logo(img: Image.Image, draw: ImageDraw.ImageDraw, logo_path: s
         ImageDraw.Draw(mask).ellipse((0, 0, 92, 92), fill=255)
         img.paste(logo, (62, 48), mask)
         draw.text((175, 55), "Axiom—chatfight", font=logo_font, fill=(255, 255, 255))
-        draw.text((175, 105), " @AxiomBots ", font=hint_font, fill=(230, 230, 230))
+        draw.text((175, 105), "© @AxiomBots ", font=hint_font, fill=(230, 230, 230))
     except Exception:
         draw.text((70, 55), "Axiom—chatfight", font=logo_font, fill=(255, 255, 255))
-        draw.text((70, 105), " @AxiomBots", font=hint_font, fill=(230, 230, 230))
+        draw.text((70, 105), "© @AxiomBots", font=hint_font, fill=(230, 230, 230))
 
 
 def generate_word_image(word: str, output_dir: str = ".", logo_path: str | None = None) -> str:
