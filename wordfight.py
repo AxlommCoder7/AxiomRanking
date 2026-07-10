@@ -61,11 +61,11 @@ def _paste_custom_logo(img: Image.Image, draw: ImageDraw.ImageDraw, logo_path: s
         mask = Image.new("L", logo.size, 0)
         ImageDraw.Draw(mask).ellipse((0, 0, 92, 92), fill=255)
         img.paste(logo, (62, 48), mask)
-        draw.text((175, 55), "AXIOM", font=logo_font, fill=(255, 255, 255))
-        draw.text((175, 105), "CHATFIGHT BOT", font=hint_font, fill=(230, 230, 230))
+        draw.text((175, 55), "Axiom—chatfight", font=logo_font, fill=(255, 255, 255))
+        draw.text((175, 105), " @AxiomBots ", font=hint_font, fill=(230, 230, 230))
     except Exception:
-        draw.text((70, 55), "AXIOM", font=logo_font, fill=(255, 255, 255))
-        draw.text((70, 105), "CHATFIGHT BOT", font=hint_font, fill=(230, 230, 230))
+        draw.text((70, 55), "Axiom—chatfight", font=logo_font, fill=(255, 255, 255))
+        draw.text((70, 105), " @AxiomBots", font=hint_font, fill=(230, 230, 230))
 
 
 def generate_word_image(word: str, output_dir: str = ".", logo_path: str | None = None) -> str:
@@ -128,7 +128,7 @@ def start_game(chat_id: int, output_dir: str = ".", logo_path: str | None = None
         "word": word,
         "photo": photo,
         "caption": (
-            "<b>ChatFight ⚡</b>\n\n"
+            "<b>Axiom—chatfight ⚡</b>\n\n"
             "⚡ Be the first to write the word shown in this photo.\n"
             f"⏱ <b>Time remaining:</b> {WORD_GAME_SECONDS // 60} minutes\n\n"
         ),
