@@ -142,23 +142,50 @@ def format_duration(seconds):
     value = seconds // 60
     return f"{value} minute{'s' if value != 1 else ''}"
 
-
-def get_chat_config_buttons():
+def get_chat_config_buttons(active=None):
     return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("⏱ 10 sec", callback_data="wordtime:10", style=ButtonStyle.PRIMARY),
-            InlineKeyboardButton("⏱ 1 min", callback_data="wordtime:60", style=ButtonStyle.PRIMARY),
+            InlineKeyboardButton(
+                "⏱ 10 sec",
+                callback_data="wordtime:10",
+                style=ButtonStyle.SUCCESS if active == "10" else ButtonStyle.PRIMARY
+            ),
+            InlineKeyboardButton(
+                "⏱ 1 min",
+                callback_data="wordtime:60",
+                style=ButtonStyle.SUCCESS if active == "60" else ButtonStyle.PRIMARY
+            ),
         ],
         [
-            InlineKeyboardButton("⏱ 10 min", callback_data="wordtime:600", style=ButtonStyle.PRIMARY),
-            InlineKeyboardButton("⏱ 1 hour", callback_data="wordtime:3600", style=ButtonStyle.PRIMARY),
+            InlineKeyboardButton(
+                "⏱ 10 min",
+                callback_data="wordtime:600",
+                style=ButtonStyle.SUCCESS if active == "600" else ButtonStyle.PRIMARY
+            ),
+            InlineKeyboardButton(
+                "⏱ 1 hour",
+                callback_data="wordtime:3600",
+                style=ButtonStyle.SUCCESS if active == "3600" else ButtonStyle.PRIMARY
+            ),
         ],
         [
-            InlineKeyboardButton("⏱ 1 day", callback_data="wordtime:86400", style=ButtonStyle.PRIMARY),
-            InlineKeyboardButton("✍️ Custom", callback_data="wordtime:custom", style=ButtonStyle.PRIMARY),
+            InlineKeyboardButton(
+                "⏱ 1 day",
+                callback_data="wordtime:86400",
+                style=ButtonStyle.SUCCESS if active == "86400" else ButtonStyle.PRIMARY
+            ),
+            InlineKeyboardButton(
+                "✍️ Custom",
+                callback_data="wordtime:custom",
+                style=ButtonStyle.SUCCESS if active == "custom" else ButtonStyle.PRIMARY
+            ),
         ],
         [
-            InlineKeyboardButton("❌ Off", callback_data="wordtime:off", style=ButtonStyle.DANGER),
+            InlineKeyboardButton(
+                "❌ Off",
+                callback_data="wordtime:off",
+                style=ButtonStyle.SUCCESS if active == "off" else ButtonStyle.DANGER
+            ),
         ]
     ])
 
