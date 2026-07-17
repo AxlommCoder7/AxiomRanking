@@ -47,6 +47,7 @@ API_HASH = os.getenv("API_HASH")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 MONGO_URL = os.getenv("MONGO_URL")
 OWNER_ID = int(os.getenv("OWNER_ID", "0") or 0)
+OWNER_ID = 123456789
 
 SESSION_NAME = f"ranking_bot_{os.getpid()}"
 
