@@ -783,12 +783,12 @@ async def kill_cmd(_, message):
     result = perform_kill(message.from_user.id, target.id)
     await message.reply_text(result["message"], parse_mode=ParseMode.HTML)
 
-@bot.on_message(filters.command("transfer") | filters.command("pay"))
+@bot.on_message(filters.command("transfer") | filters.command("give"))
 async def transfer_cmd(_, message):
     parts = message.text.split()
     if len(parts) < 3:
         return await message.reply_text(
-            "❌ Usage: /transfer @username amount\nExample: /transfer @maanav 100",
+            "❌ Usage: /Give @username amount\nExample: /transfer @AxiomRich 100",
             parse_mode=ParseMode.HTML
         )
     
