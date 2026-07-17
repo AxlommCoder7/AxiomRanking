@@ -19,6 +19,8 @@ from premium import p, PREMIUM_PARSE
 from wordfight import (
     start_game, 
     check_answer, 
+    get_user_status,
+    buy_shield,
     cmd_balance, 
     cmd_leaderboard, 
     cmd_profile, 
@@ -607,6 +609,12 @@ async def shield_cmd(_, message):
     result = buy_shield(message.from_user.id, days)
     await message.reply_text(result["message"], parse_mode=ParseMode.HTML)
 
+@bot.on_message(filters.command("status") | filters.command("mystatus"))
+async def status_cmd(_, message):
+    text = get_user_status(message.from_user.id)
+    await message.reply_text(text, parse_mode=ParseMode.HTML)
+
+
 @bot.on_message(filters.command("profile"))
 async def profile_cmd(_, message):
     target = await get_target_user(message)
@@ -771,13 +779,17 @@ async def count_messages(_, message):
                 message.text
             )
 
+            if word_result["status"] == "dead":
+                await message.reply_text(word_result["message"], parse_mode=ParseMode.HTML)
+                return
+
             if word_result["status"] == "expired":
                 await message.reply_text(
                     "❌ <b>Time's up!</b> /wordfight se naya random word start karo.",
-
-
                     parse_mode=ParseMode.HTML
                 )
+                return
+
             elif word_result["status"] == "correct":
                 await users.update_one(
                     {
@@ -786,7 +798,7 @@ async def count_messages(_, message):
                     },
                     {
                         "$inc": {
-                            "overall": word_result["reward"],       # <-- Yahan change kiya
+                            "overall": word_result["reward"],
                             f"daily.{today()}": word_result["reward"],
                             f"weekly.{week()}": word_result["reward"]
                         },
