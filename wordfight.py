@@ -510,8 +510,8 @@ def generate_word_image(word: str, output_dir: str = ".", logo_path: str | None 
     img = _draw_word_background(width, height)
     draw = ImageDraw.Draw(img)
     
-    logo_font = _load_font("cfont.ttf", 42)
-    word_font = _load_font("cfont.ttf", 92)
+    logo_font = _load_font("f.ttf", 42)
+    word_font = _load_font("f.ttf", 92)
     hint_font = _load_font("f.ttf", 24)
     
     _paste_custom_logo(img, draw, logo_path or os.getenv("WORD_GAME_LOGO_PATH"), logo_font, hint_font)
