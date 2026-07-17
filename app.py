@@ -337,7 +337,7 @@ def generate_leaderboard_image(ranking, mode):
 
     # fonts
     try:
-        title_font = ImageFont.truetype("cfont.ttf", 88)
+        title_font = ImageFont.truetype("f.ttf", 88)
         name_font = ImageFont.truetype("f.ttf", 22)
         small_font = ImageFont.truetype("f.ttf", 26)
         smalll_font = ImageFont.truetype("f.ttf", 55)
