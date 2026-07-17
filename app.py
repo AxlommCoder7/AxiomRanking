@@ -579,9 +579,27 @@ async def start_cmd(_, message):
 
 # ==================== NEW ECONOMY COMMANDS ====================
 
+# ==================== UPDATED ECONOMY COMMANDS ====================
+
+# Helper function to get target name safely
+async def get_target_display_name(target):
+    if target.username:
+        return f"@{target.username}"
+    return target.first_name or "User"
+
 @bot.on_message(filters.command("bal"))
 async def balance_cmd(_, message):
-    text = cmd_balance(message.from_user.id, message.from_user.first_name)
+    target = await get_target_user(message)
+    if not target:
+        target = message.from_user
+    
+    # Bot check
+    me = await bot.get_me()
+    if target.id == me.id:
+        return await message.reply_text("❌ Bot ka balance check nahi kar sakte!")
+
+    target_name = target.first_name if target.id != message.from_user.id else None
+    text = cmd_balance(target.id, target_name)
     await message.reply_text(text, parse_mode=ParseMode.HTML)
 
 @bot.on_message(filters.command("top"))
@@ -591,56 +609,51 @@ async def top_cmd(_, message):
 
 @bot.on_message(filters.command("protect") | filters.command("shield"))
 async def shield_cmd(_, message):
-    try:
-        parts = message.text.split()
-        if len(parts) < 2:
-            return await message.reply_text(
-                "🛡️ <b>Protection Shield Shop</b>\n\n"
-                "1️⃣ <b>1 Day Shield</b> - 500 coins\n"
-                "2️⃣ <b>2 Days Shield</b> - 1500 coins\n"
-                "3️⃣ <b>3 Days Shield</b> - 3000 coins\n\n"
-                "Usage: <code>/protect 1d</code> | <code>/protect 2d</code> | <code>/protect 3d</code>",
-                parse_mode=ParseMode.HTML
-            )
-        
-        days_input = parts[1].lower()
-        
-        if days_input == "1d":
-            days = 1
-            cost = 500
-        elif days_input == "2d":
-            days = 2
-            cost = 1500
-        elif days_input == "3d":
-            days = 3
-            cost = 3000
-        else:
-            return await message.reply_text(
-                "❌ Invalid format! Use:\n"
-                "<code>/protect 1d</code>\n"
-                "<code>/protect 2d</code>\n"
-                "<code>/protect 3d</code>",
-                parse_mode=ParseMode.HTML
-            )
-        
-        # Import at module level use kar
-        result = buy_shield(message.from_user.id, days)
-        await message.reply_text(result["message"], parse_mode=ParseMode.HTML)
-        
-    except Exception as e:
-        await message.reply_text(f"❌ Error: {str(e)}")
-        logging.exception("SHIELD CMD ERROR: %s", e)
+    parts = message.text.split()
+    if len(parts) < 2:
+        return await message.reply_text(
+            "🛡️ <b>Protection Shield Shop</b>\n\n"
+            "1️⃣ <b>1 Day Shield</b> - 500 coins\n"
+            "2️⃣ <b>2 Days Shield</b> - 1500 coins\n"
+            "3️⃣ <b>3 Days Shield</b> - 3000 coins\n\n"
+            "Usage: <code>/protect 1d</code> | <code>/protect 2d</code> | <code>/protect 3d</code>",
+            parse_mode=ParseMode.HTML
+        )
+    
+    days_input = parts[1].lower()
+    
+    if days_input == "1d":
+        days = 1
+    elif days_input == "2d":
+        days = 2
+    elif days_input == "3d":
+        days = 3
+    else:
+        return await message.reply_text(
+            "❌ Invalid format! Use:\n"
+            "<code>/protect 1d</code>\n"
+            "<code>/protect 2d</code>\n"
+            "<code>/protect 3d</code>",
+            parse_mode=ParseMode.HTML
+        )
+    
+    result = buy_shield(message.from_user.id, days)
+    await message.reply_text(result["message"], parse_mode=ParseMode.HTML)
 
 @bot.on_message(filters.command("status") | filters.command("mystatus"))
 async def status_cmd(_, message):
     text = get_user_status(message.from_user.id)
     await message.reply_text(text, parse_mode=ParseMode.HTML)
 
-
 @bot.on_message(filters.command("profile"))
 async def profile_cmd(_, message):
     target = await get_target_user(message)
     target_id = target.id if target else message.from_user.id
+    
+    me = await bot.get_me()
+    if target_id == me.id:
+        return await message.reply_text("❌ Bot ka profile check nahi kar sakte!")
+
     text = cmd_profile(message.from_user.id, target_id)
     await message.reply_text(text, parse_mode=ParseMode.HTML)
 
@@ -651,8 +664,17 @@ async def rob_cmd(_, message):
         return await message.reply_text("❌ User nahi mila! Reply karo ya @username/ID likho.")
     if target.id == message.from_user.id:
         return await message.reply_text("❌ Khud ko rob nahi kar sakte!")
+    
+    me = await bot.get_me()
+    if target.id == me.id:
+        return await message.reply_text("❌ Bot ko rob nahi kar sakte!")
+
     result = perform_rob(message.from_user.id, target.id)
-    await message.reply_text(result["message"], parse_mode=ParseMode.HTML)
+    target_name = await get_target_display_name(target)
+    
+    # Add target name at the top of the message
+    final_msg = f"🎯 <b>Target: {target_name}</b>\n\n{result['message']}"
+    await message.reply_text(final_msg, parse_mode=ParseMode.HTML)
 
 @bot.on_message(filters.command("kill"))
 async def kill_cmd(_, message):
@@ -661,15 +683,24 @@ async def kill_cmd(_, message):
         return await message.reply_text("❌ User nahi mila! Reply karo ya @username/ID likho.")
     if target.id == message.from_user.id:
         return await message.reply_text("❌ Khud ko kill nahi kar sakte!")
+    
+    me = await bot.get_me()
+    if target.id == me.id:
+        return await message.reply_text("❌ Bot ko kill nahi kar sakte!")
+
     result = perform_kill(message.from_user.id, target.id)
-    await message.reply_text(result["message"], parse_mode=ParseMode.HTML)
+    target_name = await get_target_display_name(target)
+    
+    # Add target name at the top of the message
+    final_msg = f" <b>Target: {target_name}</b>\n\n{result['message']}"
+    await message.reply_text(final_msg, parse_mode=ParseMode.HTML)
 
 @bot.on_message(filters.command("transfer") | filters.command("give"))
 async def transfer_cmd(_, message):
     parts = message.text.split()
     if len(parts) < 3:
         return await message.reply_text(
-            "❌ Usage: /Give @username amount\nExample: /transfer @AxiomRich 100",
+            "❌ Usage: /transfer @username amount\nExample: /transfer @AxiomRich 100",
             parse_mode=ParseMode.HTML
         )
     
@@ -682,10 +713,18 @@ async def transfer_cmd(_, message):
         return await message.reply_text("❌ User nahi mila!")
     
     if target.id == message.from_user.id:
-        return await message.reply_text("❌ Khud ko transfer nahi kar sakte!")
+        return await message.reply_text(" Khud ko transfer nahi kar sakte!")
+    
+    me = await bot.get_me()
+    if target.id == me.id:
+        return await message.reply_text("❌ Bot ko transfer nahi kar sakte!")
     
     result = transfer_coins(message.from_user.id, target.id, amount)
-    await message.reply_text(result["message"], parse_mode=ParseMode.HTML)
+    target_name = await get_target_display_name(target)
+    
+    # Add target name at the top of the message
+    final_msg = f"🎯 <b>Target: {target_name}</b>\n\n{result['message']}"
+    await message.reply_text(final_msg, parse_mode=ParseMode.HTML)
 
 
 @bot.on_message(filters.group & ~filters.service)
