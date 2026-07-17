@@ -591,41 +591,45 @@ async def top_cmd(_, message):
 
 @bot.on_message(filters.command("protect") | filters.command("shield"))
 async def shield_cmd(_, message):
-    parts = message.text.split()
-    if len(parts) < 2:
-        return await message.reply_text(
-            "️ <b>Protection Shield Shop</b>\n\n"
-            "1️ <b>1 Day Shield</b> - 500 coins\n"
-            "2️ <b>2 Days Shield</b> - 1500 coins\n"
-            "3️⃣ <b>3 Days Shield</b> - 3000 coins\n\n"
-            "Usage: <code>/protect 1d</code> | <code>/protect 2d</code> | <code>/protect 3d</code>",
-            parse_mode=ParseMode.HTML
-        )
-    
-    days_input = parts[1].lower()
-    
-    # Parse days from input like "1d", "2d", "3d"
-    if days_input == "1d":
-        days = 1
-        cost = 500
-    elif days_input == "2d":
-        days = 2
-        cost = 1500
-    elif days_input == "3d":
-        days = 3
-        cost = 3000
-    else:
-        return await message.reply_text(
-            " Invalid format! Use:\n"
-            "<code>/protect 1d</code>\n"
-            "<code>/protect 2d</code>\n"
-            "<code>/protect 3d</code>",
-            parse_mode=ParseMode.HTML
-        )
-    
-    from wordfight import buy_shield
-    result = buy_shield(message.from_user.id, days)
-    await message.reply_text(result["message"], parse_mode=ParseMode.HTML)
+    try:
+        parts = message.text.split()
+        if len(parts) < 2:
+            return await message.reply_text(
+                "🛡️ <b>Protection Shield Shop</b>\n\n"
+                "1️⃣ <b>1 Day Shield</b> - 500 coins\n"
+                "2️⃣ <b>2 Days Shield</b> - 1500 coins\n"
+                "3️⃣ <b>3 Days Shield</b> - 3000 coins\n\n"
+                "Usage: <code>/protect 1d</code> | <code>/protect 2d</code> | <code>/protect 3d</code>",
+                parse_mode=ParseMode.HTML
+            )
+        
+        days_input = parts[1].lower()
+        
+        if days_input == "1d":
+            days = 1
+            cost = 500
+        elif days_input == "2d":
+            days = 2
+            cost = 1500
+        elif days_input == "3d":
+            days = 3
+            cost = 3000
+        else:
+            return await message.reply_text(
+                "❌ Invalid format! Use:\n"
+                "<code>/protect 1d</code>\n"
+                "<code>/protect 2d</code>\n"
+                "<code>/protect 3d</code>",
+                parse_mode=ParseMode.HTML
+            )
+        
+        # Import at module level use kar
+        result = buy_shield(message.from_user.id, days)
+        await message.reply_text(result["message"], parse_mode=ParseMode.HTML)
+        
+    except Exception as e:
+        await message.reply_text(f"❌ Error: {str(e)}")
+        logging.exception("SHIELD CMD ERROR: %s", e)
 
 @bot.on_message(filters.command("status") | filters.command("mystatus"))
 async def status_cmd(_, message):
