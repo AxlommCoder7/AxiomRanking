@@ -589,10 +589,10 @@ async def balance_cmd(_, message):
     if not target:
         target = message.from_user
     
-    # Bot check
     me = await bot.get_me()
-    if target.id == me.id:
-        return await message.reply_text("❌ Bot ka balance check nahi kar sakte!")
+    # Dusre bots ko block kar, apne bot ko allow kar
+    if target.is_bot and target.id != me.id:
+        return await message.reply_text("❌ Dusre bots ka balance check nahi kar sakte!")
 
     target_name = target.first_name if target.id != message.from_user.id else None
     text = cmd_balance(target.id, target_name)
@@ -662,8 +662,8 @@ async def rob_cmd(_, message):
         return await message.reply_text("❌ Khud ko rob nahi kar sakte!")
     
     me = await bot.get_me()
-    if target.id == me.id:
-        return await message.reply_text("❌ Bot ko rob nahi kar sakte!")
+    if target.is_bot and target.id != me.id:
+        return await message.reply_text("❌ Dusre bots ko rob nahi kar sakte!")
 
     result = perform_rob(message.from_user.id, target.id)
     target_name = await get_target_display_name(target)
@@ -681,8 +681,8 @@ async def kill_cmd(_, message):
         return await message.reply_text("❌ Khud ko kill nahi kar sakte!")
     
     me = await bot.get_me()
-    if target.id == me.id:
-        return await message.reply_text("❌ Bot ko kill nahi kar sakte!")
+    if target.is_bot and target.id != me.id:
+        return await message.reply_text("❌ Dusre bots ko kill nahi kar sakte!")
 
     result = perform_kill(message.from_user.id, target.id)
     target_name = await get_target_display_name(target)
@@ -712,8 +712,8 @@ async def transfer_cmd(_, message):
         return await message.reply_text(" Khud ko transfer nahi kar sakte!")
     
     me = await bot.get_me()
-    if target.id == me.id:
-        return await message.reply_text("❌ Bot ko transfer nahi kar sakte!")
+    if target.is_bot and target.id != me.id:
+        return await message.reply_text("❌ Dusre bots ko transfer nahi kar sakte!")
     
     result = transfer_coins(message.from_user.id, target.id, amount)
     target_name = await get_target_display_name(target)
