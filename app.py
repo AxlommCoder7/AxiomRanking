@@ -588,7 +588,7 @@ async def start_cmd(_, message):
                 )
             ],
             [
-                InlineKeyboardButton("⌯ σᴡηєꝛ ᴀxɪσϻ ⌯", url="https://t.me/CreativeAxiom", style=ButtonStyle.DANGER)
+                InlineKeyboardButton("⌯ σᴡηєꝛ ᴀxɪσϻ ⌯", user_id=OWNER_ID, style=ButtonStyle.DANGER)
             ],
             [
                 InlineKeyboardButton("ᴧxɪσϻ υᴘᴅᴧᴛєs ⎘", url="https://t.me/axiombots", style=ButtonStyle.PRIMARY),
