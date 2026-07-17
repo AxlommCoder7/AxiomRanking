@@ -557,6 +557,69 @@ async def start_cmd(_, message):
     )
 
 
+# ==================== NEW ECONOMY COMMANDS ====================
+
+@bot.on_message(filters.command("bal"))
+async def balance_cmd(_, message):
+    text = cmd_balance(message.from_user.id, message.from_user.first_name)
+    await message.reply_text(text, parse_mode=ParseMode.HTML)
+
+@bot.on_message(filters.command("top"))
+async def top_cmd(_, message):
+    text = cmd_leaderboard(10)
+    await message.reply_text(text, parse_mode=ParseMode.HTML)
+
+@bot.on_message(filters.command("profile"))
+async def profile_cmd(_, message):
+    target = await get_target_user(message)
+    target_id = target.id if target else message.from_user.id
+    text = cmd_profile(message.from_user.id, target_id)
+    await message.reply_text(text, parse_mode=ParseMode.HTML)
+
+@bot.on_message(filters.command("rob"))
+async def rob_cmd(_, message):
+    target = await get_target_user(message)
+    if not target:
+        return await message.reply_text("❌ User nahi mila! Reply karo ya @username/ID likho.")
+    if target.id == message.from_user.id:
+        return await message.reply_text("❌ Khud ko rob nahi kar sakte!")
+    result = perform_rob(message.from_user.id, target.id)
+    await message.reply_text(result["message"], parse_mode=ParseMode.HTML)
+
+@bot.on_message(filters.command("kill"))
+async def kill_cmd(_, message):
+    target = await get_target_user(message)
+    if not target:
+        return await message.reply_text("❌ User nahi mila! Reply karo ya @username/ID likho.")
+    if target.id == message.from_user.id:
+        return await message.reply_text("❌ Khud ko kill nahi kar sakte!")
+    result = perform_kill(message.from_user.id, target.id)
+    await message.reply_text(result["message"], parse_mode=ParseMode.HTML)
+
+@bot.on_message(filters.command("transfer") | filters.command("give"))
+async def transfer_cmd(_, message):
+    parts = message.text.split()
+    if len(parts) < 3:
+        return await message.reply_text(
+            "❌ Usage: /Give @username amount\nExample: /transfer @AxiomRich 100",
+            parse_mode=ParseMode.HTML
+        )
+    
+    try:
+        amount = int(parts[2])
+        target = await bot.get_users(parts[1])
+    except ValueError:
+        return await message.reply_text("❌ Amount number hona chahiye!")
+    except Exception:
+        return await message.reply_text("❌ User nahi mila!")
+    
+    if target.id == message.from_user.id:
+        return await message.reply_text("❌ Khud ko transfer nahi kar sakte!")
+    
+    result = transfer_coins(message.from_user.id, target.id, amount)
+    await message.reply_text(result["message"], parse_mode=ParseMode.HTML)
+
+
 @bot.on_message(filters.group & ~filters.service)
 async def count_messages(_, message):
     try:
@@ -743,69 +806,6 @@ async def count_messages(_, message):
     except Exception as e:
         logging.exception("COUNT ERROR: %s", e)
         print(f"COUNT ERROR: {e}")
-
-# ==================== NEW ECONOMY COMMANDS ====================
-
-@bot.on_message(filters.command("bal"))
-async def balance_cmd(_, message):
-    text = cmd_balance(message.from_user.id, message.from_user.first_name)
-    await message.reply_text(text, parse_mode=ParseMode.HTML)
-
-@bot.on_message(filters.command("top"))
-async def top_cmd(_, message):
-    text = cmd_leaderboard(10)
-    await message.reply_text(text, parse_mode=ParseMode.HTML)
-
-@bot.on_message(filters.command("profile"))
-async def profile_cmd(_, message):
-    target = await get_target_user(message)
-    target_id = target.id if target else message.from_user.id
-    text = cmd_profile(message.from_user.id, target_id)
-    await message.reply_text(text, parse_mode=ParseMode.HTML)
-
-@bot.on_message(filters.command("rob"))
-async def rob_cmd(_, message):
-    target = await get_target_user(message)
-    if not target:
-        return await message.reply_text("❌ User nahi mila! Reply karo ya @username/ID likho.")
-    if target.id == message.from_user.id:
-        return await message.reply_text("❌ Khud ko rob nahi kar sakte!")
-    result = perform_rob(message.from_user.id, target.id)
-    await message.reply_text(result["message"], parse_mode=ParseMode.HTML)
-
-@bot.on_message(filters.command("kill"))
-async def kill_cmd(_, message):
-    target = await get_target_user(message)
-    if not target:
-        return await message.reply_text("❌ User nahi mila! Reply karo ya @username/ID likho.")
-    if target.id == message.from_user.id:
-        return await message.reply_text("❌ Khud ko kill nahi kar sakte!")
-    result = perform_kill(message.from_user.id, target.id)
-    await message.reply_text(result["message"], parse_mode=ParseMode.HTML)
-
-@bot.on_message(filters.command("transfer") | filters.command("give"))
-async def transfer_cmd(_, message):
-    parts = message.text.split()
-    if len(parts) < 3:
-        return await message.reply_text(
-            "❌ Usage: /Give @username amount\nExample: /transfer @AxiomRich 100",
-            parse_mode=ParseMode.HTML
-        )
-    
-    try:
-        amount = int(parts[2])
-        target = await bot.get_users(parts[1])
-    except ValueError:
-        return await message.reply_text("❌ Amount number hona chahiye!")
-    except Exception:
-        return await message.reply_text("❌ User nahi mila!")
-    
-    if target.id == message.from_user.id:
-        return await message.reply_text("❌ Khud ko transfer nahi kar sakte!")
-    
-    result = transfer_coins(message.from_user.id, target.id, amount)
-    await message.reply_text(result["message"], parse_mode=ParseMode.HTML)
-
 
 @bot.on_callback_query()
 async def callback_handler(_, query):
