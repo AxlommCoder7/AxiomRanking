@@ -578,10 +578,11 @@ async def start_cmd(_, message):
 
 
 # ==================== SIMPLE REPLY-ONLY ECONOMY COMMANDS ====================
-async def get_target_display_name(target):
-    if target.username:
-        return f"@{target.username}"
-    return target.first_name or "User"
+async def get_target_user(message):
+    """Sirf reply se user dhundhne ka function"""
+    if message.reply_to_message and message.reply_to_message.from_user:
+        return message.reply_to_message.from_user
+    return None
 
 @bot.on_message(filters.command("bal"))
 async def balance_cmd(_, message):
