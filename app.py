@@ -570,37 +570,29 @@ async def test(_, message):
 async def start_cmd(_, message):
     await message.reply_text(
         p(
-"""<tg-emoji emoji-id="5040016479722931047">✨</tg-emoji> <b>𝐖‌єʟᴄσϻє 𝐓‌σ 𝐀‌xɪσϻ 𝐑‌ᴧηᴋɪηɢ 𝐁‌σᴛ <tg-emoji emoji-id="6100570056884752399">💠</tg-emoji> </b>
+"""<b>𝐖‌єʟᴄσϻє 𝐓‌σ 𝐀‌xɪσϻ 𝐂‌ʜᴧᴛғɪɢʜᴛ</b>
 
-<b>𝐓‌ꝛᴧᴄᴋ ɢꝛσυᴘ ᴄʜᴧᴛs єᴧsɪʟʏ 📊</b>
+<blockquote><b>𝐍‌σᴛ ᴊυsᴛ ᴧησᴛʜєꝛ ᴄʜᴧᴛ ʙσᴛ.
+𝐀‌xɪσϻ 𝐂‌ʜᴧᴛғɪɢʜᴛ ᴛυꝛηs єᴠєꝛʏ ɢꝛσυᴘ ɪηᴛσ ᴧ ʀєᴧʟ-ᴛɪϻє ʙᴧᴛᴛʟєғɪєʟᴅ.
+ᴄʜᴧᴛ, єᴧꝛη, ʀɪsє ᴛʜꝛσυɢʜ ᴛʜє ʀᴧηᴋs ᴧηᴅ ʙєᴄσϻє ᴛʜє υηᴅɪsᴘυᴛєᴅ ᴄʜᴧϻᴘɪση σғ ʏσυꝛ ᴄσϻϻυηɪᴛʏ.</b></blockquote>
 
-<b> <tg-emoji emoji-id="6260304872785059395">🔵</tg-emoji> 𝐂‌σϻϻᴧηᴅs:</b>
-• /ranking <b>- sʜσᴡ ʟєᴧᴅєꝛʙσᴧꝛᴅ <tg-emoji emoji-id="6260273356315040975">💀</tg-emoji> </b>
-• /chatconfig <b>- auto word game settings panel ⚙️</b>
-
-• /logs <b>- bot logs file</b>
-• /gitpull <b>- server pe git pull</b>
-
-
-• /wordfight <b>- random word game start karo ⚡</b>
-
-"""     
+<b>💠 𝐎‌ηє ɢꝛσυᴘ. 𝐎‌ηє ᴄʜᴧϻᴘɪση.</b>"""
+   
         ),
         parse_mode=PREMIUM_PARSE,
         reply_markup=InlineKeyboardMarkup([
             [
                 InlineKeyboardButton(
                     "☊₊ ᴧᴅᴅ ϻє ᴛσ ʏσυʀ ᴄʜᴧᴛ ₊☊",
-                    url=f"https://t.me/{(await bot.get_me()).username}?startgroup=true"
+                    url=f"https://t.me/{(await bot.get_me()).username}?startgroup=true", style=ButtonStyle.SUCCESS
                 )
             ],
             [
-                InlineKeyboardButton("ᴧxɪσϻ υᴘᴅᴧᴛєs ⎘", url="https://t.me/axiombots"),
-                InlineKeyboardButton("ᴧxɪσϻ sυᴘᴘσʀᴛ ☏︎", url="https://t.me/axlomm")
-            ],
+                InlineKeyboardButton("⌯ σᴡηєꝛ ᴀxɪσϻ ⌯", url="https://t.me/CreativeAxiom", style=ButtonStyle.DANGER)
+            ]
             [
-                InlineKeyboardButton("⌯ ᴧxɪσϻ ⌯", url="https://t.me/xomnv"),
-                InlineKeyboardButton("🛠️ sσυʀᴄє ᴄσᴅє", url="https://github.com/maanavbaby/AxiomRanking")
+                InlineKeyboardButton("ᴧxɪσϻ υᴘᴅᴧᴛєs ⎘", url="https://t.me/axiombots", style=ButtonStyle.PRIMARY),
+                InlineKeyboardButton("ᴧxɪσϻ sυᴘᴘσʀᴛ ☏︎", url="https://t.me/axlomm", style=ButtonStyle.PRIMARY)
             ]
         ])
     )
