@@ -1,5 +1,7 @@
 import re
 import os
+from dotenv import load_dotenv
+load_dotenv()
 import random
 import asyncio
 import logging
