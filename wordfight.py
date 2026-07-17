@@ -36,7 +36,7 @@ WORD_BANK = [
     "winner", "loser", "bright", "strong", "silent", "simple", "smooth", "purple", "yellow", "magnet",
     "cosmic", "impact", "storm", "cyber", "venom", "joker", "strike", "vision", "typing", "trigger",
     "axiom", "chatfight", "premium", "ranking", "message", "telegram", "leaderboard", "speed", "power", 
-    "black", "Axiom", "OwnerAxiom", "Maanav", "AxiomBots"
+    "black", "Axiom", "OwnerAxiom", "Maanav", "AxiomBots",
     "ability", "academy", "account", "action", "adventure", "airplane", "airport", "alchemy",
     "anchor", "ancient", "android", "angel", "animal", "anthem", "apollo", "archive",
     "arena", "armor", "arrow", "artist", "asteroid", "atomic", "autumn", "avalanche",
@@ -134,24 +134,19 @@ def init_database():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         last_rob TIMESTAMP,
         last_killed TIMESTAMP,
-        last_kill TIMESTAMP
+        last_kill TIMESTAMP,
+        shield_expiry TIMESTAMP,
+        is_dead INTEGER DEFAULT 0,
+        death_expiry TIMESTAMP
     )""")
     c.execute("""CREATE TABLE IF NOT EXISTS game_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
-        chat_id INTEGER,
-        word TEXT,
-        reward INTEGER,
-        time_taken REAL,
-        percentage_earned REAL,
-        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        user_id INTEGER, chat_id INTEGER, word TEXT, reward INTEGER, 
+        time_taken REAL, percentage_earned REAL, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )""")
     c.execute("""CREATE TABLE IF NOT EXISTS transactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        from_user INTEGER,
-        to_user INTEGER,
-        amount INTEGER,
-        type TEXT,
+        from_user INTEGER, to_user INTEGER, amount INTEGER, type TEXT, 
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )""")
     conn.commit()
@@ -243,8 +238,18 @@ def can_kill(user_id: int) -> Tuple[bool, str]:
     return True, ""
 
 def perform_rob(attacker_id: int, victim_id: int) -> dict:
+    # Check if attacker is dead
+    is_dead, time_left = is_user_dead(attacker_id)
+    if is_dead:
+        return {"success": False, "message": f"💀 You are DEAD! Can't rob for {time_left}"}
+    
     attacker = get_or_create_user(attacker_id)
     victim = get_or_create_user(victim_id)
+    
+    # Shield check pehle karo (Yahan se sahi order start hota hai)
+    has_shield, shield_msg = check_shield(victim_id)
+    if has_shield:
+        return {"success": False, "message": f"🛡️ Victim has protection shield! ({shield_msg})"}
     
     can_do, msg = can_rob(attacker_id)
     if not can_do:
@@ -282,29 +287,46 @@ def perform_rob(attacker_id: int, victim_id: int) -> dict:
     return {"success": True, "message": f"✅ Robbed {rob_amount} coins!"}
 
 def perform_kill(killer_id: int, victim_id: int) -> dict:
+    """Kill someone - NO cooldown for killer, victim dies for 6 hours"""
+    if killer_id == victim_id:
+        return {"success": False, "message": "❌ Khud ko kill nahi kar sakte!"}
+    
     killer = get_or_create_user(killer_id)
     victim = get_or_create_user(victim_id)
     
-    can_do, msg = can_kill(killer_id)
-    if not can_do:
-        return {"success": False, "message": msg}
+    # Check if killer is dead
+    is_dead, time_left = is_user_dead(killer_id)
+    if is_dead:
+        return {"success": False, "message": f"💀 You are DEAD! Wait {time_left} to auto-revive."}
     
-    update_user_balance(killer_id, -KILL_COST)
-    victim_loss = max(int(victim['balance'] * 0.30), 20)
-    update_user_balance(victim_id, -victim_loss)
-    killer_gain = int(victim_loss * 0.5)
-    update_user_balance(killer_id, killer_gain)
+    # Check if victim is already dead
+    v_dead, v_time = is_user_dead(victim_id)
+    if v_dead:
+        return {"success": False, "message": f"💀 Victim is already DEAD! Revives in {v_time}"}
+    
+    # Check if victim has shield
+    has_shield, shield_msg = check_shield(victim_id)
+    if has_shield:
+        return {"success": False, "message": f"🛡️ Victim has protection shield! ({shield_msg})"}
+    
+    # Random reward between 120 and 180
+    reward = random.randint(120, 180)
+    update_user_balance(killer_id, reward)
+    
+    # Set victim dead for 6 hours
+    death_expiry = datetime.utcnow() + timedelta(hours=6)
     
     conn = sqlite3.connect(DATABASE_PATH)
     c = conn.cursor()
-    c.execute("INSERT INTO transactions (from_user, to_user, amount, type) VALUES (?, ?, ?, 'kill')", 
-              (victim_id, killer_id, killer_gain))
-    c.execute("UPDATE users SET last_kill = ?, last_killed = ? WHERE user_id IN (?, ?)", 
-              (datetime.utcnow().isoformat(), datetime.utcnow().isoformat(), killer_id, victim_id))
+    c.execute("UPDATE users SET is_dead = 1, death_expiry = ?, last_killed = ? WHERE user_id = ?", 
+              (death_expiry.isoformat(), datetime.utcnow().isoformat(), victim_id))
     conn.commit()
     conn.close()
     
-    return {"success": True, "message": f"💀 Killed! Cost: {KILL_COST}, Stole: {killer_gain}"}
+    return {
+        "success": True, 
+        "message": f"💀 KILLED! Victim is DEAD for 6 hours!\n💰 You earned: {reward} coins\n😵 Victim can't kill/rob/play until auto-revive!"
+    }
 
 def transfer_coins(from_id: int, to_id: int, amount: int) -> dict:
     sender = get_or_create_user(from_id)
@@ -346,6 +368,98 @@ def get_user_stats(user_id: int) -> Optional[dict]:
     tx = c.fetchone()
     conn.close()
     return {"user": user, "recent_games": recent, "total_tx": tx[0] or 0} if user else None
+
+# ==================== DEATH & SHIELD SYSTEM (NEW) ====================
+
+def is_user_dead(user_id: int) -> Tuple[bool, str]:
+    """Check if user is dead. Auto-revives if time is up."""
+    user = get_or_create_user(user_id)
+    if not user.get('is_dead') or not user.get('death_expiry'):
+        return False, ""
+    
+    death_expiry = datetime.fromisoformat(user['death_expiry'])
+    if datetime.utcnow() < death_expiry:
+        remaining = death_expiry - datetime.utcnow()
+        hours = remaining.seconds // 3600
+        minutes = (remaining.seconds % 3600) // 60
+        return True, f"{hours}h {minutes}m"
+    
+    # Auto revive
+    conn = sqlite3.connect(DATABASE_PATH)
+    c = conn.cursor()
+    c.execute("UPDATE users SET is_dead = 0, death_expiry = NULL WHERE user_id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+    return False, ""
+
+def check_shield(user_id: int) -> Tuple[bool, str]:
+    """Check if user has active protection shield."""
+    user = get_or_create_user(user_id)
+    if not user.get('shield_expiry'):
+        return False, ""
+    
+    shield_expiry = datetime.fromisoformat(user['shield_expiry'])
+    if datetime.utcnow() < shield_expiry:
+        remaining = shield_expiry - datetime.utcnow()
+        days = remaining.days
+        hours = remaining.seconds // 3600
+        return True, f"{days}d {hours}h"
+    
+    # Shield expired
+    conn = sqlite3.connect(DATABASE_PATH)
+    c = conn.cursor()
+    c.execute("UPDATE users SET shield_expiry = NULL WHERE user_id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+    return False, ""
+
+def buy_shield(user_id: int, days: int) -> dict:
+    """Buy protection shield."""
+    costs = {1: 500, 2: 1500, 3: 3000}
+    if days not in costs:
+        return {"success": False, "message": "❌ Invalid days! Use 1, 2, or 3."}
+    
+    cost = costs[days]
+    user = get_or_create_user(user_id)
+    if user['balance'] < cost:
+        return {"success": False, "message": f"❌ Insufficient balance! Need {cost} coins (have {user['balance']})"}
+    
+    update_user_balance(user_id, -cost)
+    expiry = datetime.utcnow() + timedelta(days=days)
+    
+    conn = sqlite3.connect(DATABASE_PATH)
+    c = conn.cursor()
+    c.execute("UPDATE users SET shield_expiry = ? WHERE user_id = ?", (expiry.isoformat(), user_id))
+    conn.commit()
+    conn.close()
+    
+    return {"success": True, "message": f"🛡️ Shield activated for {days} day(s)!\n💰 Cost: {cost} coins\n⏰ Valid until: {expiry.strftime('%Y-%m-%d %H:%M')}"}
+
+def get_user_status(user_id: int) -> str:
+    """Get user's current status (dead/alive, shield, etc.)"""
+    user = get_or_create_user(user_id)
+    is_dead, death_time = is_user_dead(user_id)
+    has_shield, shield_time = check_shield(user_id)
+    
+    text = f"👤 <b>Your Status</b>\n\n"
+    text += f"💰 Balance: {user['balance']} coins\n"
+    text += f"🎮 Games: {user['games_won']}/{user['games_played']} wins\n"
+    text += f"⚡ Fastest: {user['fastest_time']:.1f}s\n\n"
+    
+    if is_dead:
+        text += f"💀 <b>State: DEAD</b>\n"
+        text += f"⏳ Revive in: {death_time}\n"
+        text += f"🚫 You can only chat. No kill/rob/games!"
+    elif has_shield:
+        text += f"🛡️ <b>Shield Active</b>\n"
+        text += f"⏰ Protected for: {shield_time}\n"
+        text += f"✅ You are safe from kills and robs!"
+    else:
+        text += f"🟢 <b>State: ALIVE</b>\n"
+        text += f"⚔️ You can kill/rob freely!"
+    
+    return text
+
 
 # ==================== OLD HELPER FUNCTIONS (UNCHANGED) ====================
 def normalize_answer(text: str) -> str:
@@ -560,6 +674,12 @@ def start_game(chat_id: int, output_dir: str = ".", logo_path: str | None = None
 
 # ==================== UPDATED check_answer (WITH TIME-BASED REWARDS) ====================
 def check_answer(chat_id: int, user_id: int, username: str, answer: str) -> dict:
+    # Check if user is dead
+    is_dead, time_left = is_user_dead(user_id)
+    if is_dead:
+        return {"status": "dead", "reward": 0, "message": f"💀 You are DEAD! Can't play for {time_left}. Wait for auto-revive!"}
+    
+    # ... (baaki code same rahega)
     game = WORD_GAMES.get(chat_id)
     if not game:
         return {"status": "no_game", "reward": 0}
