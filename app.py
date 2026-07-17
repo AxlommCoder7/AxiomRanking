@@ -600,130 +600,192 @@ async def start_cmd(_, message):
     )
 
 
-# ==================== ECONOMY COMMANDS (PRIME_BOT STYLE) ====================
+# ==================== PRIME_BOT STYLE ECONOMY SYSTEM ====================
 
-@bot.on_message(filters.command("bal"))
+@bot.on_message(filters.command("bal") | filters.command("balance"))
 async def balance_cmd(_, message):
     if message.reply_to_message and message.reply_to_message.from_user:
         target = message.reply_to_message.from_user
         if target.is_bot:
             return await message.reply_text("bot ka kya balance dekh raha hai be 😂")
-        text = cmd_balance(target.id, target.first_name)
+        user_rec = get_or_create_user(target.id)
+        await message.reply_text(f"{target.first_name} ka balance: {user_rec['balance']}")
     else:
-        text = cmd_balance(message.from_user.id, message.from_user.first_name)
-    await message.reply_text(text, parse_mode=ParseMode.HTML)
-
-@bot.on_message(filters.command("rob"))
-async def rob_cmd(_, message):
-    if not message.reply_to_message or not message.reply_to_message.from_user:
-        return await message.reply_text("❌ Reply to someone's message with /rob <amount>")
-    
-    parts = message.text.split()
-    if len(parts) < 2:
-        return await message.reply_text(" Amount required! Example: /rob 100")
-    
-    try:
-        amount = int(parts[1])
-    except:
-        return await message.reply_text("❌ Invalid amount!")
-    
-    target = message.reply_to_message.from_user
-    if target.id == message.from_user.id:
-        return await message.reply_text("❌ Khud ko rob nahi kar sakte!")
-    
-    if target.is_bot:
-        return await message.reply_text("❌ Bots ko rob nahi kar sakte!")
-    
-    # Check protection
-    has_shield, shield_msg = check_shield(target.id)
-    if has_shield:
-        return await message.reply_text(f"🛡️ Target is protected! {shield_msg}")
-    
-    # Perform rob
-    result = perform_rob_custom(message.from_user.id, target.id, amount)
-    await message.reply_text(f"🎯 Target: {target.first_name}\n\n{result['message']}", parse_mode=ParseMode.HTML)
-
-@bot.on_message(filters.command("kill"))
-async def kill_cmd(_, message):
-    if not message.reply_to_message or not message.reply_to_message.from_user:
-        return await message.reply_text("❌ Reply to someone's message to kill them!")
-    
-    target = message.reply_to_message.from_user
-    if target.id == message.from_user.id:
-        return await message.reply_text("❌ Khud ko kill nahi kar sakte!")
-    
-    if target.is_bot:
-        return await message.reply_text("❌ Bots ko kill nahi kar sakte!")
-    
-    # Check protection
-    has_shield, shield_msg = check_shield(target.id)
-    if has_shield:
-        return await message.reply_text(f"🛡️ Target is protected! {shield_msg}")
-    
-    result = perform_kill(message.from_user.id, target.id)
-    await message.reply_text(f" Target: {target.first_name}\n\n{result['message']}", parse_mode=ParseMode.HTML)
-
-@bot.on_message(filters.command("give") | filters.command("transfer"))
-async def transfer_cmd(_, message):
-    if not message.reply_to_message or not message.reply_to_message.from_user:
-        return await message.reply_text("❌ Reply to someone's message with /give <amount>")
-    
-    parts = message.text.split()
-    if len(parts) < 2:
-        return await message.reply_text("❌ Amount required! Example: /give 100")
-    
-    try:
-        amount = int(parts[1])
-    except:
-        return await message.reply_text("❌ Invalid amount!")
-    
-    target = message.reply_to_message.from_user
-    if target.id == message.from_user.id:
-        return await message.reply_text("❌ Khud ko transfer nahi kar sakte!")
-    
-    if target.is_bot:
-        return await message.reply_text("❌ Bots ko transfer nahi kar sakte!")
-    
-    result = transfer_coins(message.from_user.id, target.id, amount)
-    await message.reply_text(f"💸 Target: {target.first_name}\n\n{result['message']}", parse_mode=ParseMode.HTML)
+        user_rec = get_or_create_user(message.from_user.id)
+        await message.reply_text(f"Tera balance: {user_rec['balance']}")
 
 @bot.on_message(filters.command("claim"))
 async def claim_cmd(_, message):
     user_id = message.from_user.id
     user_rec = get_or_create_user(user_id)
-    now = datetime.utcnow()
+    now = int(datetime.utcnow().timestamp())
     
-    # Check if already claimed today
     last_claim = user_rec.get('last_claim', 0)
-    if last_claim:
-        last_claim_dt = datetime.fromisoformat(last_claim) if isinstance(last_claim, str) else datetime.fromtimestamp(last_claim)
-        if (now - last_claim_dt).total_seconds() < 86400:
-            next_claim = last_claim_dt + timedelta(days=1)
-            return await message.reply_text(f"❌ You already claimed today! Next claim: {next_claim.strftime('%Y-%m-%d %H:%M')}")
+    if now - last_claim < 24 * 3600:
+        next_claim = datetime.fromtimestamp(last_claim + 24 * 3600)
+        return await message.reply_text(f"tumne already claim kiya. Next: {next_claim.strftime('%Y-%m-%d %H:%M:%S')}")
     
     # Random reward (same as prime_bot)
     r = random.random() * 100
     if r < 60:
-        amount = random.randint(1, 100)
+        amt = random.randint(1, 100)
     elif r < 90:
-        amount = random.randint(101, 500)
+        amt = random.randint(101, 500)
     elif r < 95:
-        amount = random.randint(501, 2000)
+        amt = random.randint(501, 2000)
     elif r < 99:
-        amount = random.randint(2000, 10000)
+        amt = random.randint(2000, 10000)
     else:
-        amount = random.randint(10000, 50000)
+        amt = random.randint(10000, 50000)
     
-    # Update balance and last claim
-    update_user_balance(user_id, amount)
+    # Update balance and last_claim
     conn = sqlite3.connect(DATABASE_PATH)
     c = conn.cursor()
-    c.execute("UPDATE users SET last_claim = ? WHERE user_id = ?", (now.isoformat(), user_id))
+    c.execute("""UPDATE users SET balance = balance + ?, last_claim = ? WHERE user_id = ?""", 
+              (amt, now, user_id))
     conn.commit()
     conn.close()
     
     new_balance = get_or_create_user(user_id)['balance']
-    await message.reply_text(f"✅ Claim successful! You got {amount} coins. Total: {new_balance}")
+    await message.reply_text(f"Claim successful! tumhe {amt} coin mila. Total: {new_balance}")
+
+@bot.on_message(filters.command("protect") | filters.command("shield"))
+async def protect_cmd(_, message):
+    user_id = message.from_user.id
+    args = message.text.split()
+    
+    if len(args) < 2:
+        return await message.reply_text("Usage: /protect 1d | 2d | 3d")
+    
+    opt = args[1]
+    mapping = {"1d": (1, 200), "2d": (2, 700), "3d": (3, 2000)}
+    
+    if opt not in mapping:
+        return await message.reply_text("Options: 1d (200), 2d (700), 3d (2000)")
+    
+    days, cost = mapping[opt]
+    user_rec = get_or_create_user(user_id)
+    
+    if user_rec['balance'] < cost:
+        return await message.reply_text(f"Not enough coins. Required: {cost}, you have: {user_rec['balance']}")
+    
+    # Deduct coins and set protection
+    update_user_balance(user_id, -cost)
+    shield_expiry = datetime.utcnow() + timedelta(days=days)
+    
+    conn = sqlite3.connect(DATABASE_PATH)
+    c = conn.cursor()
+    c.execute("""UPDATE users SET shield_expiry = ? WHERE user_id = ?""", 
+              (shield_expiry.isoformat(), user_id))
+    conn.commit()
+    conn.close()
+    
+    dt = shield_expiry.strftime("%Y-%m-%d %H:%M:%S")
+    new_balance = get_or_create_user(user_id)['balance']
+    await message.reply_text(f"Protection active until {dt}. coins left: {new_balance}")
+
+@bot.on_message(filters.command("steal") | filters.command("rob"))
+async def steal_cmd(_, message):
+    if not message.reply_to_message or not message.reply_to_message.from_user:
+        return await message.reply_text("Reply to a user's message with /steal <amount>")
+    
+    args = message.text.split()
+    if len(args) < 2:
+        return await message.reply_text(" Amount required! Example: /steal 100")
+    
+    try:
+        amt = int(args[1])
+    except:
+        return await message.reply_text("❌ Invalid amount!")
+    
+    target = message.reply_to_message.from_user
+    user_id = message.from_user.id
+    
+    if target.id == user_id:
+        return await message.reply_text("tu apne ghar se chori karega .gali du")
+    
+    if target.is_bot:
+        return await message.reply_text("❌ Cannot steal from bots.")
+    
+    # Check protection
+    target_rec = get_or_create_user(target.id)
+    if target_rec.get('shield_expiry'):
+        shield_expiry = datetime.fromisoformat(target_rec['shield_expiry'])
+        if datetime.utcnow() < shield_expiry:
+            return await message.reply_text("️ Target is protected.")
+    
+    target_rec = get_or_create_user(target.id)
+    actual = min(amt, target_rec['balance'])
+    
+    if actual <= 0:
+        return await message.reply_text("Target has no coins.")
+    
+    # Steal coins
+    update_user_balance(target.id, -actual)
+    actual2 = round(actual / 1.25)  # 25% tax
+    update_user_balance(user_id, actual2)
+    
+    await message.reply_text(f"Steal success! got {actual2} from {target.first_name}")
+
+@bot.on_message(filters.command("give_coin") | filters.command("give"))
+async def give_coin_cmd(_, message):
+    if not message.reply_to_message or not message.reply_to_message.from_user:
+        return await message.reply_text("Reply to a user with /give_coin <amount>")
+    
+    args = message.text.split()
+    if len(args) < 2:
+        return await message.reply_text("❌ Amount required! Example: /give_coin 100")
+    
+    try:
+        amt = int(args[1])
+    except:
+        return await message.reply_text(" Invalid amount!")
+    
+    user_id = message.from_user.id
+    to_user = message.reply_to_message.from_user
+    
+    if to_user.is_bot:
+        return await message.reply_text("Cannot gift to bots.")
+    
+    user_rec = get_or_create_user(user_id)
+    if user_rec['balance'] < amt:
+        return await message.reply_text("Not enough coins.")
+    
+    # Deduct from sender
+    update_user_balance(user_id, -amt)
+    # Give to receiver (with 25% tax)
+    amt_after_tax = round(amt / 1.25)
+    update_user_balance(to_user.id, amt_after_tax)
+    
+    new_balance = get_or_create_user(user_id)['balance']
+    await message.reply_text(f"Given {amt_after_tax} to {to_user.first_name}. Your coins: {new_balance}")
+
+@bot.on_message(filters.command("kill"))
+async def kill_cmd(_, message):
+    if not message.reply_to_message or not message.reply_to_message.from_user:
+        return await message.reply_text(" Reply to someone's message to kill them!")
+    
+    target = message.reply_to_message.from_user
+    user_id = message.from_user.id
+    
+    if target.id == user_id:
+        return await message.reply_text("❌ You cannot kill yourself!")
+    
+    if target.is_bot:
+        return await message.reply_text("❌ Cannot kill other bots!")
+    
+    # Check protection
+    target_rec = get_or_create_user(target.id)
+    if target_rec.get('shield_expiry'):
+        shield_expiry = datetime.fromisoformat(target_rec['shield_expiry'])
+        if datetime.utcnow() < shield_expiry:
+            return await message.reply_text("️ Target is protected!")
+    
+    # Random reward 120-180
+    reward = random.randint(120, 180)
+    update_user_balance(user_id, reward)
+    
+    await message.reply_text(f"💀 Target: {target.first_name}\n\n💰 You earned: {reward} coins")
 # ==============================================================================
 
 @bot.on_message(filters.group & ~filters.service)
