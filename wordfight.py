@@ -340,20 +340,15 @@ def check_shield(user_id: int) -> Tuple[bool, str]:
     return False, ""
 
 def perform_rob_custom(attacker_id: int, victim_id: int, amount: int) -> dict:
-    """Rob a specific amount from victim"""
+    """Rob specific amount (like prime_bot)"""
     attacker = get_or_create_user(attacker_id)
     victim = get_or_create_user(victim_id)
     
-    # Check shield
-    has_shield, shield_msg = check_shield(victim_id)
-    if has_shield:
-        return {"success": False, "message": f"🛡️ Victim has protection shield! ({shield_msg})"}
-    
     if victim['balance'] < amount:
-        return {"success": False, "message": f" Victim doesn't have enough coins! (has {victim['balance']})"}
+        return {"success": False, "message": f"❌ Victim doesn't have enough coins! (has {victim['balance']})"}
     
     if amount < 10:
-        return {"success": False, "message": "❌ Minimum rob amount is 10 coins!"}
+        return {"success": False, "message": "❌ Minimum 10 coins chahiye!"}
     
     update_user_balance(attacker_id, amount)
     update_user_balance(victim_id, -amount)
