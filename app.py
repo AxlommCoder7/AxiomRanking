@@ -39,8 +39,8 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-print("Starting The Axiom Chatfight bot...")
-logging.info("Starting The Axiom Chatfight bot...")
+print("\nStarting The Axiom Chatfight bot...")
+logging.info("\nStarting The Axiom Chatfight bot...")
 
 API_ID = int(os.getenv("API_ID"))
 API_HASH = os.getenv("API_HASH")
