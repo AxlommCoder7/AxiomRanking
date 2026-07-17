@@ -347,10 +347,10 @@ def perform_rob_custom(attacker_id: int, victim_id: int, amount: int) -> dict:
     # Check shield
     has_shield, shield_msg = check_shield(victim_id)
     if has_shield:
-        return {"success": False, "message": f"️ Victim has protection shield! ({shield_msg})"}
+        return {"success": False, "message": f"🛡️ Victim has protection shield! ({shield_msg})"}
     
     if victim['balance'] < amount:
-        return {"success": False, "message": f"❌ Victim doesn't have enough coins! (has {victim['balance']})"}
+        return {"success": False, "message": f" Victim doesn't have enough coins! (has {victim['balance']})"}
     
     if amount < 10:
         return {"success": False, "message": "❌ Minimum rob amount is 10 coins!"}
