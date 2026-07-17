@@ -39,8 +39,8 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-print("Starting bot...")
-logging.info("Starting bot...")
+print("Starting The Axiom Chatfight bot...")
+logging.info("Starting The Axiom Chatfight bot...")
 
 API_ID = int(os.getenv("API_ID"))
 API_HASH = os.getenv("API_HASH")
@@ -982,6 +982,6 @@ async def callback_handler(_, query):
 if __name__ == "__main__":
     scheduler.add_job(run_wordfight_scheduler, "interval", seconds=5, max_instances=1)
     scheduler.start()
-    print("Bot running...")
-    logging.info("Bot running...")
+    print("The Axiom Chatfight Bot started Successfully...")
+    logging.info("The Axiom Chatfight Bot started Successfully...")
     bot.run()
