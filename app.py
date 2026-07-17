@@ -600,58 +600,16 @@ async def start_cmd(_, message):
     )
 
 
-# ==================== FLEXIBLE ECONOMY COMMANDS (USERNAME/REPLY + AMOUNT) ====================
-def get_target_display_name(target):
-    if target.username:
-        return f"@{target.username}"
-    return target.first_name or "User"
-
-async def get_target_and_amount(message, require_amount=False):
-    """Get target user and amount from message"""
-    target = None
-    amount = None
-    
-    # Check if replied
-    if message.reply_to_message and message.reply_to_message.from_user:
-        target = message.reply_to_message.from_user
-    
-    # Parse command parts
-    parts = message.text.split()
-    if len(parts) > 1:
-        # Check if first part is username/ID
-        try:
-            if parts[1].startswith('@') or parts[1].isdigit():
-                target = await bot.get_users(parts[1])
-                # Check if there's an amount
-                if len(parts) > 2:
-                    try:
-                        amount = int(parts[2])
-                    except:
-                        pass
-            else:
-                # First part might be amount
-                try:
-                    amount = int(parts[1])
-                except:
-                    pass
-        except:
-            pass
-    
-    if require_amount and amount is None:
-        return None, None, " Amount required! Example: /rob @username 100"
-    
-    if target is None:
-        return None, None, "❌ Reply to a user or mention them!"
-    
-    return target, amount, None
+# ==================== SIMPLE REPLY + AMOUNT ECONOMY (NO USERNAME NEEDED) ====================
 
 @bot.on_message(filters.command("bal"))
 async def balance_cmd(_, message):
-    target, _, error = await get_target_and_amount(message)
-    if error:
-        return await message.reply_text(error)
+    if not message.reply_to_message or not message.reply_to_message.from_user:
+        return await message.reply_text("❌ Reply to someone's message to check their balance!")
     
+    target = message.reply_to_message.from_user
     me = await bot.get_me()
+    
     if target.is_bot and target.id != me.id:
         return await message.reply_text("❌ Cannot check other bots' balance!")
 
@@ -660,9 +618,19 @@ async def balance_cmd(_, message):
 
 @bot.on_message(filters.command("rob"))
 async def rob_cmd(_, message):
-    target, amount, error = await get_target_and_amount(message, require_amount=True)
-    if error:
-        return await message.reply_text(error)
+    if not message.reply_to_message or not message.reply_to_message.from_user:
+        return await message.reply_text("❌ Reply to someone's message to rob them!")
+    
+    parts = message.text.split()
+    if len(parts) < 2:
+        return await message.reply_text("❌ Amount required! Example: Reply and use `/rob 100`")
+    
+    try:
+        amount = int(parts[1])
+    except ValueError:
+        return await message.reply_text("❌ Amount must be a number!")
+    
+    target = message.reply_to_message.from_user
     
     if target.id == message.from_user.id:
         return await message.reply_text("❌ You cannot rob yourself!")
@@ -671,22 +639,18 @@ async def rob_cmd(_, message):
     if target.is_bot and target.id != me.id:
         return await message.reply_text("❌ Cannot rob other bots!")
 
-    # Use specified amount or default to 15% of victim's balance
-    if amount:
-        # Custom amount specified
-        result = perform_rob_custom(message.from_user.id, target.id, amount)
-    else:
-        result = perform_rob(message.from_user.id, target.id)
-    
-    target_name = get_target_display_name(target)
+    # Custom rob function for specific amount
+    result = perform_rob_custom(message.from_user.id, target.id, amount)
+    target_name = target.first_name or "User"
     final_msg = f"🎯 <b>Target: {target_name}</b>\n\n{result['message']}"
     await message.reply_text(final_msg, parse_mode=ParseMode.HTML)
 
 @bot.on_message(filters.command("kill"))
 async def kill_cmd(_, message):
-    target, _, error = await get_target_and_amount(message)
-    if error:
-        return await message.reply_text(error)
+    if not message.reply_to_message or not message.reply_to_message.from_user:
+        return await message.reply_text("❌ Reply to someone's message to kill them!")
+    
+    target = message.reply_to_message.from_user
     
     if target.id == message.from_user.id:
         return await message.reply_text("❌ You cannot kill yourself!")
@@ -696,25 +660,35 @@ async def kill_cmd(_, message):
         return await message.reply_text("❌ Cannot kill other bots!")
 
     result = perform_kill(message.from_user.id, target.id)
-    target_name = get_target_display_name(target)
+    target_name = target.first_name or "User"
     final_msg = f"💀 <b>Target: {target_name}</b>\n\n{result['message']}"
     await message.reply_text(final_msg, parse_mode=ParseMode.HTML)
 
 @bot.on_message(filters.command("give") | filters.command("transfer"))
 async def transfer_cmd(_, message):
-    target, amount, error = await get_target_and_amount(message, require_amount=True)
-    if error:
-        return await message.reply_text(error)
+    if not message.reply_to_message or not message.reply_to_message.from_user:
+        return await message.reply_text("❌ Reply to someone's message to transfer coins!")
+    
+    parts = message.text.split()
+    if len(parts) < 2:
+        return await message.reply_text("❌ Amount required! Example: Reply and use `/give 100`")
+    
+    try:
+        amount = int(parts[1])
+    except ValueError:
+        return await message.reply_text("❌ Amount must be a number!")
+    
+    target = message.reply_to_message.from_user
     
     if target.id == message.from_user.id:
         return await message.reply_text("❌ You cannot transfer to yourself!")
     
     me = await bot.get_me()
     if target.is_bot and target.id != me.id:
-        return await message.reply_text(" Cannot transfer to other bots!")
+        return await message.reply_text("❌ Cannot transfer to other bots!")
     
     result = transfer_coins(message.from_user.id, target.id, amount)
-    target_name = get_target_display_name(target)
+    target_name = target.first_name or "User"
     final_msg = f"💸 <b>Target: {target_name}</b>\n\n{result['message']}"
     await message.reply_text(final_msg, parse_mode=ParseMode.HTML)
 # ==============================================================================
