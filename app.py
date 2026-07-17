@@ -16,7 +16,16 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from premium import p, PREMIUM_PARSE
-from wordfight import WORD_GAME_REWARD, check_answer, start_game
+from wordfight import (
+    start_game, 
+    check_answer, 
+    cmd_balance, 
+    cmd_leaderboard, 
+    cmd_profile, 
+    perform_rob, 
+    perform_kill, 
+    transfer_coins
+)
 from pyrogram import Client, filters
 from pyrogram.enums import ParseMode
 
@@ -51,6 +60,19 @@ bot = Client(
     workdir="/tmp"
 )
 
+async def get_target_user(message):
+    """Reply ya Username/ID se user dhundhne ka function"""
+    if message.reply_to_message and message.reply_to_message.from_user:
+        return message.reply_to_message.from_user
+    
+    parts = message.text.split()
+    if len(parts) > 1:
+        try:
+            return await bot.get_users(parts[1])
+        except Exception:
+            return None
+    return None
+    
 mongo = AsyncIOMotorClient(MONGO_URL)
 db = mongo["ranking_bot"]
 users = db["users"]
@@ -606,19 +628,10 @@ async def count_messages(_, message):
                 return
 
             if cmd.startswith("/wordfight") or cmd.startswith("/word"):
-                await message.reply_text(
-                    "⚙️ Ab word game automatic hai. Settings ke liye use karo: <code>/chatconfig</code>",
-
-
-                )
-
-            if cmd.startswith("/wordfight") or cmd.startswith("/word"):
                 game = start_game(message.chat.id)
                 await message.reply_photo(
                     photo=game["photo"],
                     caption=game["caption"],
-
-
                     parse_mode=ParseMode.HTML
                 )
                 return
@@ -650,7 +663,12 @@ async def count_messages(_, message):
                 return
 
         if message.text:
-            word_result = check_answer(message.chat.id, message.text)
+            word_result = check_answer(
+                message.chat.id, 
+                message.from_user.id, 
+                message.from_user.first_name, 
+                message.text
+            )
 
             if word_result["status"] == "expired":
                 await message.reply_text(
@@ -659,7 +677,6 @@ async def count_messages(_, message):
 
                     parse_mode=ParseMode.HTML
                 )
-
             elif word_result["status"] == "correct":
                 await users.update_one(
                     {
@@ -668,9 +685,9 @@ async def count_messages(_, message):
                     },
                     {
                         "$inc": {
-                            "overall": WORD_GAME_REWARD,
-                            f"daily.{today()}": WORD_GAME_REWARD,
-                            f"weekly.{week()}": WORD_GAME_REWARD
+                            "overall": word_result["reward"],       # <-- Yahan change kiya
+                            f"daily.{today()}": word_result["reward"],
+                            f"weekly.{week()}": word_result["reward"]
                         },
                         "$set": {
                             "name": message.from_user.first_name
@@ -678,12 +695,7 @@ async def count_messages(_, message):
                     },
                     upsert=True
                 )
-                await message.reply_text(
-                    f"💪 <b>Time goal!</b> {message.from_user.mention}\n"
-                    "You guessed the word!\n"
-                    f"+{WORD_GAME_REWARD} points added to leaderboard.",
-                    parse_mode=ParseMode.HTML
-                )
+                await message.reply_text(word_result["message"], parse_mode=ParseMode.HTML)
                 return
 
         await users.update_one(
@@ -731,6 +743,68 @@ async def count_messages(_, message):
     except Exception as e:
         logging.exception("COUNT ERROR: %s", e)
         print(f"COUNT ERROR: {e}")
+
+# ==================== NEW ECONOMY COMMANDS ====================
+
+@bot.on_message(filters.command("bal"))
+async def balance_cmd(_, message):
+    text = cmd_balance(message.from_user.id, message.from_user.first_name)
+    await message.reply_text(text, parse_mode=ParseMode.HTML)
+
+@bot.on_message(filters.command("top"))
+async def top_cmd(_, message):
+    text = cmd_leaderboard(10)
+    await message.reply_text(text, parse_mode=ParseMode.HTML)
+
+@bot.on_message(filters.command("profile"))
+async def profile_cmd(_, message):
+    target = await get_target_user(message)
+    target_id = target.id if target else message.from_user.id
+    text = cmd_profile(message.from_user.id, target_id)
+    await message.reply_text(text, parse_mode=ParseMode.HTML)
+
+@bot.on_message(filters.command("rob"))
+async def rob_cmd(_, message):
+    target = await get_target_user(message)
+    if not target:
+        return await message.reply_text("❌ User nahi mila! Reply karo ya @username/ID likho.")
+    if target.id == message.from_user.id:
+        return await message.reply_text("❌ Khud ko rob nahi kar sakte!")
+    result = perform_rob(message.from_user.id, target.id)
+    await message.reply_text(result["message"], parse_mode=ParseMode.HTML)
+
+@bot.on_message(filters.command("kill"))
+async def kill_cmd(_, message):
+    target = await get_target_user(message)
+    if not target:
+        return await message.reply_text("❌ User nahi mila! Reply karo ya @username/ID likho.")
+    if target.id == message.from_user.id:
+        return await message.reply_text("❌ Khud ko kill nahi kar sakte!")
+    result = perform_kill(message.from_user.id, target.id)
+    await message.reply_text(result["message"], parse_mode=ParseMode.HTML)
+
+@bot.on_message(filters.command("transfer") | filters.command("pay"))
+async def transfer_cmd(_, message):
+    parts = message.text.split()
+    if len(parts) < 3:
+        return await message.reply_text(
+            "❌ Usage: /transfer @username amount\nExample: /transfer @maanav 100",
+            parse_mode=ParseMode.HTML
+        )
+    
+    try:
+        amount = int(parts[2])
+        target = await bot.get_users(parts[1])
+    except ValueError:
+        return await message.reply_text("❌ Amount number hona chahiye!")
+    except Exception:
+        return await message.reply_text("❌ User nahi mila!")
+    
+    if target.id == message.from_user.id:
+        return await message.reply_text("❌ Khud ko transfer nahi kar sakte!")
+    
+    result = transfer_coins(message.from_user.id, target.id, amount)
+    await message.reply_text(result["message"], parse_mode=ParseMode.HTML)
 
 
 @bot.on_callback_query()
