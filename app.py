@@ -600,50 +600,48 @@ async def start_cmd(_, message):
     )
 
 
-# ==================== SIMPLE REPLY + AMOUNT ECONOMY (NO USERNAME NEEDED) ====================
+# ==================== ECONOMY COMMANDS (PRIME_BOT STYLE) ====================
 
 @bot.on_message(filters.command("bal"))
 async def balance_cmd(_, message):
-    if not message.reply_to_message or not message.reply_to_message.from_user:
-        return await message.reply_text("❌ Reply to someone's message to check their balance!")
-    
-    target = message.reply_to_message.from_user
-    me = await bot.get_me()
-    
-    if target.is_bot and target.id != me.id:
-        return await message.reply_text("❌ Cannot check other bots' balance!")
-
-    text = cmd_balance(target.id, target.first_name)
+    if message.reply_to_message and message.reply_to_message.from_user:
+        target = message.reply_to_message.from_user
+        if target.is_bot:
+            return await message.reply_text("bot ka kya balance dekh raha hai be 😂")
+        text = cmd_balance(target.id, target.first_name)
+    else:
+        text = cmd_balance(message.from_user.id, message.from_user.first_name)
     await message.reply_text(text, parse_mode=ParseMode.HTML)
 
 @bot.on_message(filters.command("rob"))
 async def rob_cmd(_, message):
     if not message.reply_to_message or not message.reply_to_message.from_user:
-        return await message.reply_text("❌ Reply to someone's message to rob them!")
+        return await message.reply_text("❌ Reply to someone's message with /rob <amount>")
     
     parts = message.text.split()
     if len(parts) < 2:
-        return await message.reply_text("❌ Amount required! Example: Reply and use `/rob 100`")
+        return await message.reply_text(" Amount required! Example: /rob 100")
     
     try:
         amount = int(parts[1])
-    except ValueError:
-        return await message.reply_text("❌ Amount must be a number!")
+    except:
+        return await message.reply_text("❌ Invalid amount!")
     
     target = message.reply_to_message.from_user
-    
     if target.id == message.from_user.id:
-        return await message.reply_text("❌ You cannot rob yourself!")
+        return await message.reply_text("❌ Khud ko rob nahi kar sakte!")
     
-    me = await bot.get_me()
-    if target.is_bot and target.id != me.id:
-        return await message.reply_text("❌ Cannot rob other bots!")
-
-    # Custom rob function for specific amount
+    if target.is_bot:
+        return await message.reply_text("❌ Bots ko rob nahi kar sakte!")
+    
+    # Check protection
+    has_shield, shield_msg = check_shield(target.id)
+    if has_shield:
+        return await message.reply_text(f"🛡️ Target is protected! {shield_msg}")
+    
+    # Perform rob
     result = perform_rob_custom(message.from_user.id, target.id, amount)
-    target_name = target.first_name or "User"
-    final_msg = f"🎯 <b>Target: {target_name}</b>\n\n{result['message']}"
-    await message.reply_text(final_msg, parse_mode=ParseMode.HTML)
+    await message.reply_text(f"🎯 Target: {target.first_name}\n\n{result['message']}", parse_mode=ParseMode.HTML)
 
 @bot.on_message(filters.command("kill"))
 async def kill_cmd(_, message):
@@ -651,46 +649,81 @@ async def kill_cmd(_, message):
         return await message.reply_text("❌ Reply to someone's message to kill them!")
     
     target = message.reply_to_message.from_user
-    
     if target.id == message.from_user.id:
-        return await message.reply_text("❌ You cannot kill yourself!")
+        return await message.reply_text("❌ Khud ko kill nahi kar sakte!")
     
-    me = await bot.get_me()
-    if target.is_bot and target.id != me.id:
-        return await message.reply_text("❌ Cannot kill other bots!")
-
+    if target.is_bot:
+        return await message.reply_text("❌ Bots ko kill nahi kar sakte!")
+    
+    # Check protection
+    has_shield, shield_msg = check_shield(target.id)
+    if has_shield:
+        return await message.reply_text(f"🛡️ Target is protected! {shield_msg}")
+    
     result = perform_kill(message.from_user.id, target.id)
-    target_name = target.first_name or "User"
-    final_msg = f"💀 <b>Target: {target_name}</b>\n\n{result['message']}"
-    await message.reply_text(final_msg, parse_mode=ParseMode.HTML)
+    await message.reply_text(f" Target: {target.first_name}\n\n{result['message']}", parse_mode=ParseMode.HTML)
 
 @bot.on_message(filters.command("give") | filters.command("transfer"))
 async def transfer_cmd(_, message):
     if not message.reply_to_message or not message.reply_to_message.from_user:
-        return await message.reply_text("❌ Reply to someone's message to transfer coins!")
+        return await message.reply_text("❌ Reply to someone's message with /give <amount>")
     
     parts = message.text.split()
     if len(parts) < 2:
-        return await message.reply_text("❌ Amount required! Example: Reply and use `/give 100`")
+        return await message.reply_text("❌ Amount required! Example: /give 100")
     
     try:
         amount = int(parts[1])
-    except ValueError:
-        return await message.reply_text("❌ Amount must be a number!")
+    except:
+        return await message.reply_text("❌ Invalid amount!")
     
     target = message.reply_to_message.from_user
-    
     if target.id == message.from_user.id:
-        return await message.reply_text("❌ You cannot transfer to yourself!")
+        return await message.reply_text("❌ Khud ko transfer nahi kar sakte!")
     
-    me = await bot.get_me()
-    if target.is_bot and target.id != me.id:
-        return await message.reply_text("❌ Cannot transfer to other bots!")
+    if target.is_bot:
+        return await message.reply_text("❌ Bots ko transfer nahi kar sakte!")
     
     result = transfer_coins(message.from_user.id, target.id, amount)
-    target_name = target.first_name or "User"
-    final_msg = f"💸 <b>Target: {target_name}</b>\n\n{result['message']}"
-    await message.reply_text(final_msg, parse_mode=ParseMode.HTML)
+    await message.reply_text(f"💸 Target: {target.first_name}\n\n{result['message']}", parse_mode=ParseMode.HTML)
+
+@bot.on_message(filters.command("claim"))
+async def claim_cmd(_, message):
+    user_id = message.from_user.id
+    user_rec = get_or_create_user(user_id)
+    now = datetime.utcnow()
+    
+    # Check if already claimed today
+    last_claim = user_rec.get('last_claim', 0)
+    if last_claim:
+        last_claim_dt = datetime.fromisoformat(last_claim) if isinstance(last_claim, str) else datetime.fromtimestamp(last_claim)
+        if (now - last_claim_dt).total_seconds() < 86400:
+            next_claim = last_claim_dt + timedelta(days=1)
+            return await message.reply_text(f"❌ You already claimed today! Next claim: {next_claim.strftime('%Y-%m-%d %H:%M')}")
+    
+    # Random reward (same as prime_bot)
+    r = random.random() * 100
+    if r < 60:
+        amount = random.randint(1, 100)
+    elif r < 90:
+        amount = random.randint(101, 500)
+    elif r < 95:
+        amount = random.randint(501, 2000)
+    elif r < 99:
+        amount = random.randint(2000, 10000)
+    else:
+        amount = random.randint(10000, 50000)
+    
+    # Update balance and last claim
+    update_user_balance(user_id, amount)
+    conn = sqlite3.connect(DATABASE_PATH)
+    c = conn.cursor()
+    c.execute("UPDATE users SET last_claim = ? WHERE user_id = ?", (now.isoformat(), user_id))
+    conn.commit()
+    conn.close()
+    
+    new_balance = get_or_create_user(user_id)['balance']
+    await message.reply_text(f"✅ Claim successful! You got {amount} coins. Total: {new_balance}")
 # ==============================================================================
 
 @bot.on_message(filters.group & ~filters.service)
