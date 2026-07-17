@@ -29,7 +29,7 @@ from wordfight import (
     transfer_coins
 )
 from pyrogram import Client, filters
-from pyrogram.enums import ParseMode
+from pyrogram.enums import ParseMode, ButtonStyle
 
 
 LOG_FILE = "bot.log"
@@ -146,19 +146,19 @@ def format_duration(seconds):
 def get_chat_config_buttons():
     return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("⏱ 10 sec", callback_data="wordtime:10"),
-            InlineKeyboardButton("⏱ 1 min", callback_data="wordtime:60"),
+            InlineKeyboardButton("⏱ 10 sec", callback_data="wordtime:10", style=ButtonStyle.PRIMARY),
+            InlineKeyboardButton("⏱ 1 min", callback_data="wordtime:60", style=ButtonStyle.PRIMARY),
         ],
         [
-            InlineKeyboardButton("⏱ 10 min", callback_data="wordtime:600"),
-            InlineKeyboardButton("⏱ 1 hour", callback_data="wordtime:3600"),
+            InlineKeyboardButton("⏱ 10 min", callback_data="wordtime:600", style=ButtonStyle.PRIMARY),
+            InlineKeyboardButton("⏱ 1 hour", callback_data="wordtime:3600", style=ButtonStyle.PRIMARY),
         ],
         [
-            InlineKeyboardButton("⏱ 1 day", callback_data="wordtime:86400"),
-            InlineKeyboardButton("✍️ Custom", callback_data="wordtime:custom"),
+            InlineKeyboardButton("⏱ 1 day", callback_data="wordtime:86400", style=ButtonStyle.PRIMARY),
+            InlineKeyboardButton("✍️ Custom", callback_data="wordtime:custom", style=ButtonStyle.PRIMARY),
         ],
         [
-            InlineKeyboardButton("❌ Off", callback_data="wordtime:off"),
+            InlineKeyboardButton("❌ Off", callback_data="wordtime:off", style=ButtonStyle.DANGER),
         ]
     ])
 
@@ -883,7 +883,8 @@ async def count_messages(_, message):
                     [
                         InlineKeyboardButton(
                             "🔥 𝐕‌ɪєᴡ 𝐑‌ᴧηᴋɪηɢ",
-                            callback_data="overall"
+                            callback_data="overall",
+                            style=ButtonStyle.SUCCESS,
                         )
                     ]
                 ])
