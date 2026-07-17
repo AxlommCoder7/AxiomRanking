@@ -569,6 +569,44 @@ async def top_cmd(_, message):
     text = cmd_leaderboard(10)
     await message.reply_text(text, parse_mode=ParseMode.HTML)
 
+@bot.on_message(filters.command("protect") | filters.command("shield"))
+async def shield_cmd(_, message):
+    parts = message.text.split()
+    if len(parts) < 2:
+        return await message.reply_text(
+            "️ <b>Protection Shield Shop</b>\n\n"
+            "1️ <b>1 Day Shield</b> - 500 coins\n"
+            "2️ <b>2 Days Shield</b> - 1500 coins\n"
+            "3️⃣ <b>3 Days Shield</b> - 3000 coins\n\n"
+            "Usage: <code>/protect 1d</code> | <code>/protect 2d</code> | <code>/protect 3d</code>",
+            parse_mode=ParseMode.HTML
+        )
+    
+    days_input = parts[1].lower()
+    
+    # Parse days from input like "1d", "2d", "3d"
+    if days_input == "1d":
+        days = 1
+        cost = 500
+    elif days_input == "2d":
+        days = 2
+        cost = 1500
+    elif days_input == "3d":
+        days = 3
+        cost = 3000
+    else:
+        return await message.reply_text(
+            " Invalid format! Use:\n"
+            "<code>/protect 1d</code>\n"
+            "<code>/protect 2d</code>\n"
+            "<code>/protect 3d</code>",
+            parse_mode=ParseMode.HTML
+        )
+    
+    from wordfight import buy_shield
+    result = buy_shield(message.from_user.id, days)
+    await message.reply_text(result["message"], parse_mode=ParseMode.HTML)
+
 @bot.on_message(filters.command("profile"))
 async def profile_cmd(_, message):
     target = await get_target_user(message)
