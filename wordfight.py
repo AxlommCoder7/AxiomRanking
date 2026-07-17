@@ -339,6 +339,34 @@ def check_shield(user_id: int) -> Tuple[bool, str]:
     conn.close()
     return False, ""
 
+def perform_rob_custom(attacker_id: int, victim_id: int, amount: int) -> dict:
+    """Rob a specific amount from victim"""
+    attacker = get_or_create_user(attacker_id)
+    victim = get_or_create_user(victim_id)
+    
+    # Check shield
+    has_shield, shield_msg = check_shield(victim_id)
+    if has_shield:
+        return {"success": False, "message": f"️ Victim has protection shield! ({shield_msg})"}
+    
+    if victim['balance'] < amount:
+        return {"success": False, "message": f"❌ Victim doesn't have enough coins! (has {victim['balance']})"}
+    
+    if amount < 10:
+        return {"success": False, "message": "❌ Minimum rob amount is 10 coins!"}
+    
+    update_user_balance(attacker_id, amount)
+    update_user_balance(victim_id, -amount)
+    
+    conn = sqlite3.connect(DATABASE_PATH)
+    c = conn.cursor()
+    c.execute("INSERT INTO transactions (from_user, to_user, amount, type) VALUES (?, ?, ?, 'rob')", 
+              (victim_id, attacker_id, amount))
+    conn.commit()
+    conn.close()
+    
+    return {"success": True, "message": f"✅ Successfully robbed {amount} coins!"}
+    
 def buy_shield(user_id: int, days: int) -> dict:
     costs = {1: 500, 2: 1500, 3: 3000}
     if days not in costs:
