@@ -794,18 +794,18 @@ async def count_messages(_, message):
                 await message.reply_text(text)
                 return
 
-           if cmd.startswith("/chatconfig"):
-               
-               setting = await word_settings.find_one({"chat_id": message.chat.id})
-            
-               if setting:
+            if cmd.startswith("/chatconfig"):
+
+                setting = await word_settings.find_one({"chat_id": message.chat.id})
+
+                if setting:
                     if not setting.get("enabled", True):
                         active = "off"
                     else:
                         active = str(setting.get("interval_seconds", 3600))
                 else:
                     active = None
-            
+
                 await message.reply_text(
                     "⚙️ <b>Chat Config</b>\n\nAuto random word game ka timer select karo:",
                     parse_mode=ParseMode.HTML,
