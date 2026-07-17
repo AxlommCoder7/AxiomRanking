@@ -268,23 +268,25 @@ def trim_output(text, limit=3500):
         return text
     return text[-limit:]
 
-
 def get_buttons(active):
     return InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
                 f"⏺️ 𝐎‌ᴠєꝛᴧʟʟ {'✅' if active=='overall' else ''}",
-                callback_data="overall"
+                callback_data="overall",
+                style=ButtonStyle.SUCCESS if active=="overall" else ButtonStyle.PRIMARY
             )
         ],
         [
             InlineKeyboardButton(
                 f"⏺️ 𝐓‌σᴅᴧʏ {'✅' if active=='today' else ''}",
-                callback_data="today"
+                callback_data="today",
+                style=ButtonStyle.SUCCESS if active=="today" else ButtonStyle.PRIMARY
             ),
             InlineKeyboardButton(
                 f"⏺️ 𝐖‌єєᴋ {'✅' if active=='week' else ''}",
-                callback_data="week"
+                callback_data="week",
+                style=ButtonStyle.SUCCESS if active=="week" else ButtonStyle.PRIMARY
             )
         ]
     ])
