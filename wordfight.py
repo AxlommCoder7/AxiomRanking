@@ -640,11 +640,15 @@ def cmd_balance(user_id: int, username: str = None) -> str:
     if not user:
         return "❌ User not found!"
     
+    # Agar username hai to uska naam dikhao, warna "You"
+    name_display = f"<b>{username}</b>" if username else "<b>You</b>"
+    
     return (
-        f"💵 <b>Balance:</b> {user['balance']} coins\n"
-        f"📈 <b>Total Earned:</b> {user['total_earned']} coins\n"
-        f"🎮 <b>Games:</b> {user['games_won']}/{user['games_played']} wins\n"
-        f"⚡ <b>Fastest:</b> {user['fastest_time']:.1f}s"
+        f"👤 <b>Name: {name_display}:</b>\n\n"
+        f"💵 Balance: {user['balance']} coins\n"
+        f"📈 Total Earned: {user['total_earned']} coins\n"
+        f"🎮 Games: {user['games_won']}/{user['games_played']} wins\n"
+        f"⚡ Fastest: {user['fastest_time']:.1f}s"
     )
 
 def cmd_leaderboard(limit: int = 10) -> str:
