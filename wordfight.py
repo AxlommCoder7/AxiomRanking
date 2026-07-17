@@ -361,6 +361,18 @@ def perform_rob_custom(attacker_id: int, victim_id: int, amount: int) -> dict:
     conn.close()
     
     return {"success": True, "message": f"✅ Successfully robbed {amount} coins!"}
+
+# Add last_claim field to database
+def init_database():
+    conn = sqlite3.connect(DATABASE_PATH)
+    c = conn.cursor()
+    # Add last_claim column if not exists
+    try:
+        c.execute("""ALTER TABLE users ADD COLUMN last_claim INTEGER DEFAULT 0""")
+        conn.commit()
+    except:
+        pass
+    conn.close()
     
 def buy_shield(user_id: int, days: int) -> dict:
     costs = {1: 500, 2: 1500, 3: 3000}
