@@ -795,6 +795,7 @@ async def count_messages(_, message):
                 return
 
            if cmd.startswith("/chatconfig"):
+               
                setting = await word_settings.find_one({"chat_id": message.chat.id})
             
                if setting:
