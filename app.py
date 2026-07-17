@@ -578,10 +578,6 @@ async def start_cmd(_, message):
 
 
 # ==================== NEW ECONOMY COMMANDS ====================
-
-# ==================== UPDATED ECONOMY COMMANDS ====================
-
-# Helper function to get target name safely
 async def get_target_display_name(target):
     if target.username:
         return f"@{target.username}"
