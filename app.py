@@ -209,14 +209,32 @@ async def run_wordfight_scheduler():
 
         try:
             await send_auto_wordfight(chat_id)
+            
+            # Agar successfully bhej diya, to next_run update karo
+            await word_settings.update_one(
+                {"chat_id": chat_id},
+                {"$set": {"next_run": next_run, "updated_at": now}},
+                upsert=True
+            )
+            
         except Exception as e:
-            print(f"AUTO WORDFIGHT ERROR ({chat_id}): {e}")
-
-        await word_settings.update_one(
-            {"chat_id": chat_id},
-            {"$set": {"next_run": next_run, "updated_at": now}},
-            upsert=True
-        )
+            error_str = str(e).lower()
+            
+            # Agar error permission ya invalid chat ka hai, to us chat ke liye auto-wordfight band kar do
+            if "channel_invalid" in error_str or "forbidden" in error_str or "chat_write" in error_str:
+                print(f"⚠️ Auto-disabled wordfight for chat {chat_id} (Bot kicked or no permissions).")
+                await word_settings.update_one(
+                    {"chat_id": chat_id},
+                    {"$set": {"enabled": False, "updated_at": now}}
+                )
+            else:
+                # Baaki errors ke liye sirf log karo, next_run update karo
+                print(f"AUTO WORDFIGHT ERROR ({chat_id}): {e}")
+                await word_settings.update_one(
+                    {"chat_id": chat_id},
+                    {"$set": {"next_run": next_run, "updated_at": now}},
+                    upsert=True
+                )
 
 
 async def is_authorized_config_user(message):
