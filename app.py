@@ -794,11 +794,22 @@ async def count_messages(_, message):
                 await message.reply_text(text)
                 return
 
-            if cmd.startswith("/chatconfig"):
+           if cmd.startswith("/chatconfig"):
+            
+                setting = await word_settings.find_one({"chat_id": message.chat.id})
+            
+                if setting:
+                    if not setting.get("enabled", True):
+                        active = "off"
+                    else:
+                        active = str(setting.get("interval_seconds", 3600))
+                else:
+                    active = None
+            
                 await message.reply_text(
                     "⚙️ <b>Chat Config</b>\n\nAuto random word game ka timer select karo:",
                     parse_mode=ParseMode.HTML,
-                    reply_markup=get_chat_config_buttons()
+                    reply_markup=get_chat_config_buttons(active)
                 )
                 return
 
@@ -954,7 +965,7 @@ async def callback_handler(_, query):
             await query.message.edit_text(
                 text,
                 parse_mode=ParseMode.HTML,
-                reply_markup=get_chat_config_buttons()
+                reply_markup=get_chat_config_buttons(value)
             )
             return
 
