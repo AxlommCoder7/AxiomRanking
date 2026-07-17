@@ -7,3 +7,6 @@ python-dotenv
 pymongo
 apscheduler==3.10.4
 aiogram
+pyrofork
+kurigram
+pyrotgfork
